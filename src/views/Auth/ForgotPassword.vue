@@ -3,7 +3,6 @@
         <q-page-container>
             <q-page class="flex flex-center">
                 <q-card class="recovery-card" flat bordered>
-                    <!-- Header -->
                     <q-card-section class="text-center q-pt-xl">
                         <q-avatar size="80px" color="primary" text-color="white" class="q-mb-md">
                             <q-icon name="lock_reset" size="48px" />
@@ -16,7 +15,6 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Estado de éxito -->
                     <q-card-section v-if="emailSent" class="q-pa-lg">
                         <q-banner class="bg-positive text-white" rounded>
                             <template v-slot:avatar>
@@ -45,7 +43,6 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Formulario -->
                     <q-card-section v-else class="q-pa-lg">
                         <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
                             <q-input
@@ -64,7 +61,7 @@
                                 </template>
                             </q-input>
 
-                            <q-banner class="bg-blue-1 text-primary" rounded dense>
+                            <q-banner class="bg-green-1 text-primary" rounded dense>
                                 <template v-slot:avatar>
                                     <q-icon name="info" color="primary" />
                                 </template>
@@ -140,7 +137,7 @@ const handleSubmit = async () => {
 
 <style scoped>
 .bg-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #39A900 0%, #2d8600 100%);
     min-height: 100vh;
 }
 

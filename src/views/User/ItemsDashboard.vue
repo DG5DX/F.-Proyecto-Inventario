@@ -1,206 +1,167 @@
 <template>
-    <q-page class="q-pa-lg bg-grey-2">
-        <!-- Breadcrumbs -->
-        <q-breadcrumbs class="text-secondary q-mb-md">
-            <q-breadcrumbs-el 
-                label="Zonas" 
-                icon="view_module" 
-                to="/user/zones" 
-                class="cursor-pointer"
-            />
-            <q-breadcrumbs-el 
-                :label="categoriaNombre || 'Categoría'" 
-                icon="map" 
-                :to="`/user/classrooms?categoria=${categoriaId}&categoriaNombre=${categoriaNombre}`" 
-                class="cursor-pointer"
-            />
-            <q-breadcrumbs-el 
-                :label="aulaNombre || 'Aula'" 
-                icon="meeting_room"
-            />
+    <q-page class="page-bg q-pa-md q-pa-sm-xs">
+
+        <!-- ── Breadcrumb ───────────────────────────────────────────── -->
+        <q-breadcrumbs class="q-mb-md" active-color="primary">
+            <q-breadcrumbs-el label="Sedes" icon="view_module" to="/user/zones" class="cursor-pointer text-grey-6"/>
+            <q-breadcrumbs-el :label="zonaNombre || 'Sede'" icon="category"
+                :to="`/user/classrooms?zona=${zonaId}&zonaNombre=${zonaNombre}`"
+                class="cursor-pointer text-grey-6"/>
+            <q-breadcrumbs-el :label="aulaNombre || 'Ambiente'" icon="meeting_room" class="text-primary text-weight-medium"/>
         </q-breadcrumbs>
 
-        <!-- Header con búsqueda y filtros -->
-        <div class="row items-center q-mb-lg q-gutter-md">
-            <div class="col-12 col-md-6">
-                <div class="text-h5 text-weight-bold text-secondary">
-                    Inventario en: {{ aulaNombre || 'Aula' }}
-                </div>
-                <div class="text-caption text-grey-6">
-                    {{ categoriaNombre || 'Categoría' }}
-                </div>
-            </div>
-            <q-space />
-            <div class="col-12 col-md-auto">
-                <q-btn 
-                    flat 
-                    round 
-                    icon="refresh" 
-                    color="primary"
-                    @click="loadItems"
-                    :loading="loading"
-                >
-                    <q-tooltip>Recargar ítems</q-tooltip>
+        <!-- ── Header ──────────────────────────────────────────────── -->
+        <div class="row items-center q-mb-md q-gutter-sm">
+            <div class="row items-center col-12 col-sm-auto">
+                <q-btn icon="arrow_back" flat round dense color="primary" @click="goBack" class="q-mr-xs">
+                    <q-tooltip>Volver a Ambientes</q-tooltip>
                 </q-btn>
-            </div>
-        </div>
-
-        <!-- Barra de búsqueda y filtros -->
-        <div class="row q-col-gutter-md q-mb-lg">
-            <div class="col-12 col-md-8">
-                <q-input
-                    v-model="searchQuery"
-                    filled
-                    placeholder="Buscar ítem por nombre..."
-                    clearable
-                    @clear="searchQuery = ''"
-                    bg-color="white"
-                >
-                    <template v-slot:prepend>
-                        <q-icon name="search" />
-                    </template>
-                </q-input>
-            </div>
-            <div class="col-12 col-md-4">
-                <q-select
-                    v-model="estadoFiltro"
-                    filled
-                    label="Filtrar por Estado"
-                    :options="estadoOptions"
-                    clearable
-                    bg-color="white"
-                    color="primary"
-                >
-                    <template v-slot:prepend>
-                        <q-icon name="filter_list" />
-                    </template>
-                </q-select>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center q-py-xl">
-            <q-spinner-dots size="64px" color="primary" />
-            <div class="text-h6 text-grey-6 q-mt-md">Cargando ítems...</div>
-        </div>
-
-        <!-- Error State -->
-        <div v-else-if="error" class="text-center q-py-xl">
-            <q-icon name="error_outline" size="64px" color="negative" class="q-mb-md"/>
-            <div class="text-h6 text-negative">{{ error }}</div>
-            <q-btn 
-                color="primary" 
-                label="Reintentar" 
-                @click="loadItems" 
-                class="q-mt-md"
-            />
-        </div>
-
-        <!-- Empty State -->
-        <div v-else-if="filteredItems.length === 0" class="text-center q-py-xl">
-            <q-icon name="search_off" size="64px" color="accent" class="q-mb-md" />
-            <div class="text-h6 text-accent">
-                {{ searchQuery || estadoFiltro
-                    ? 'No se encontraron ítems que coincidan con los filtros o la búsqueda.' 
-                    : 'No hay ítems registrados en esta aula actualmente.' 
-                }}
-            </div>
-            <div class="text-subtitle1 text-grey-6 q-mb-lg">
-                {{ searchQuery || estadoFiltro
-                    ? 'Intenta limpiando el filtro de estado o modificando la búsqueda.' 
-                    : 'Contacta al administrador para agregar ítems.' 
-                }}
-            </div>
-            <q-btn 
-                color="primary" 
-                label="Volver a Aulas" 
-                icon="arrow_back"
-                @click="goBack"
-            />
-        </div>
-
-        <!-- Items Grid -->
-        <div v-else>
-            <div class="row q-col-gutter-lg">
-                <div 
-                    v-for="item in filteredItems" 
-                    :key="item._id"
-                    class="col-12 col-sm-6 col-md-4 col-lg-3"
-                >
-                    <q-card class="item-card cursor-pointer" @click="goToItemDetail(item)">
-                        <q-img 
-                            :src="item.imagen || 'https://via.placeholder.com/300x180?text=Sin+Imagen'" 
-                            height="180px" 
-                            fit="cover"
-                        >
-                            <q-badge 
-                                :color="item.estado === 'Disponible' ? 'positive' : 'negative'" 
-                                floating 
-                                class="q-px-sm q-py-xs text-caption text-weight-bold"
-                            >
-                                {{ item.estado }}
-                            </q-badge>
-                            <div class="absolute-bottom text-subtitle2 text-white bg-transparent q-pa-xs">
-                                <q-chip 
-                                    dense 
-                                    size="sm" 
-                                    color="rgba(0,0,0,0.5)" 
-                                    text-color="white"
-                                    icon="inventory"
-                                >
-                                    {{ item.cantidad_disponible }} / {{ item.cantidad_total_stock }}
-                                </q-chip>
-                            </div>
-                        </q-img>
-
-                        <q-card-section>
-                            <div class="text-subtitle1 text-weight-bold text-dark ellipsis-2-lines">
-                                {{ item.nombre }}
-                            </div>
-                            <div class="text-caption text-grey-7 q-mt-xs">
-                                <q-icon name="category" size="xs" class="q-mr-xs"/>
-                                {{ item.categoria?.nombre || 'Sin categoría' }}
-                            </div>
-                            <div class="text-caption text-grey-6 q-mt-sm">
-                                <q-icon name="label" size="xs" class="q-mr-xs"/>
-                                Tipo: {{ item.tipo_categoria }}
-                            </div>
-                        </q-card-section>
-
-                        <q-separator />
-
-                        <q-card-actions align="between">
-                            <q-chip 
-                                :color="getStockColor(item)" 
-                                text-color="white" 
-                                size="sm"
-                                dense
-                            >
-                                {{ getStockLabel(item) }}
-                            </q-chip>
-                            <q-btn 
-                                flat 
-                                icon-right="info" 
-                                label="Detalle" 
-                                color="primary" 
-                                size="sm"
-                            />
-                        </q-card-actions>
-                    </q-card>
+                <div class="header-icon-wrap q-mr-sm">
+                    <q-icon name="inventory_2" size="20px" color="white"/>
+                </div>
+                <div>
+                    <div class="text-h6 text-weight-bold text-dark lh-tight">{{ aulaNombre || 'Ambiente' }}</div>
+                    <div class="text-caption text-grey-6">{{ zonaNombre || 'Sede' }}</div>
                 </div>
             </div>
+            <q-space class="gt-xs"/>
+            <q-btn outline color="primary" icon="refresh" dense no-caps
+                @click="loadItems" :loading="loading" class="action-btn">
+                Actualizar
+            </q-btn>
+        </div>
 
-            <!-- Footer con estadísticas -->
-            <div class="q-mt-lg text-center">
-                <q-chip icon="inventory_2" color="primary" text-color="white">
-                    {{ filteredItems.length }} ítem(s) encontrado(s)
-                </q-chip>
-                <q-chip icon="check_circle" color="positive" text-color="white">
-                    {{ disponiblesCount }} disponible(s)
-                </q-chip>
-                <q-chip icon="cancel" color="negative" text-color="white">
-                    {{ agotadosCount }} agotado(s)
-                </q-chip>
+        <!-- ── Stat chips ───────────────────────────────────────────── -->
+        <div v-if="items.length > 0" class="row q-col-gutter-sm q-mb-md">
+            <div class="col-4">
+                <div class="stat-chip stat-chip--blue">
+                    <q-icon name="inventory_2" size="18px"/>
+                    <div>
+                        <div class="stat-number">{{ filteredItems.length }}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-chip stat-chip--green">
+                    <q-icon name="check_circle" size="18px"/>
+                    <div>
+                        <div class="stat-number">{{ disponiblesCount }}</div>
+                        <div class="stat-label">Disponibles</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-chip stat-chip--red">
+                    <q-icon name="cancel" size="18px"/>
+                    <div>
+                        <div class="stat-number">{{ agotadosCount }}</div>
+                        <div class="stat-label">Agotados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Filtros ───────────────────────────────────────────────── -->
+        <q-card flat class="filter-card q-mb-md">
+            <q-card-section class="q-py-sm">
+                <div class="row q-col-gutter-sm">
+                    <div class="col-12 col-sm-8">
+                        <q-input v-model="searchQuery" outlined dense clearable
+                            placeholder="Buscar por nombre..." bg-color="white"
+                            @clear="searchQuery = ''">
+                            <template v-slot:prepend><q-icon name="search" color="primary"/></template>
+                        </q-input>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                        <q-select v-model="categoriaFiltro" outlined dense clearable
+                            label="Categoría" bg-color="white"
+                            :options="categoriaOptions" emit-value map-options>
+                            <template v-slot:prepend><q-icon name="style" color="primary"/></template>
+                        </q-select>
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
+
+        <!-- ── Loading ───────────────────────────────────────────────── -->
+        <div v-if="loading" class="text-center q-py-xl">
+            <q-spinner-dots size="56px" color="primary"/>
+            <div class="text-body2 text-grey-6 q-mt-md">Cargando ítems...</div>
+        </div>
+
+        <!-- ── Error ────────────────────────────────────────────────── -->
+        <div v-else-if="error" class="text-center q-py-xl">
+            <q-icon name="error_outline" size="56px" color="negative" class="q-mb-md"/>
+            <div class="text-body1 text-negative">{{ error }}</div>
+            <q-btn color="primary" label="Reintentar" @click="loadItems" class="q-mt-md" unelevated/>
+        </div>
+
+        <!-- ── Empty ────────────────────────────────────────────────── -->
+        <div v-else-if="filteredItems.length === 0" class="text-center q-py-xl">
+            <q-icon name="search_off" size="56px" color="grey-4" class="q-mb-md"/>
+            <div class="text-body1 text-grey-6">
+                {{ searchQuery || categoriaFiltro ? 'Sin resultados con los filtros aplicados' : 'No hay ítems en este ambiente' }}
+            </div>
+            <q-btn color="primary" label="Volver a Ambientes" icon="arrow_back" class="q-mt-md" unelevated @click="goBack"/>
+        </div>
+
+        <!-- ── Grid de ítems ─────────────────────────────────────────── -->
+        <div v-else class="row q-col-gutter-md">
+            <div
+                v-for="item in filteredItems"
+                :key="item._id"
+                class="col-12 col-sm-6 col-md-4 col-lg-3"
+            >
+                <q-card class="item-card cursor-pointer" @click="goToItemDetail(item)">
+                    <!-- Imagen -->
+                    <div class="item-img-container">
+                        <q-img
+                            :src="item.imagen || ''"
+                            height="160px"
+                            fit="cover"
+                            class="item-img"
+                        >
+                            <template v-slot:error>
+                                <div class="item-img-fallback">
+                                    <q-icon name="inventory_2" size="40px" color="grey-4"/>
+                                </div>
+                            </template>
+                        </q-img>
+                        <!-- Badge estado flotante -->
+                        <span class="estado-badge" :class="item.estado === 'Disponible' ? 'estado-badge--disponible' : 'estado-badge--agotado'">
+                            {{ item.estado }}
+                        </span>
+                        <!-- Stock overlay -->
+                        <div class="stock-overlay">
+                            <q-icon name="inventory" size="12px"/>
+                            {{ item.cantidad_disponible }} / {{ item.cantidad_total_stock }}
+                        </div>
+                    </div>
+
+                    <q-card-section class="q-pa-sm q-pb-xs">
+                        <div class="text-weight-bold text-dark item-name">{{ item.nombre }}</div>
+                        <div class="text-caption text-grey-6 q-mt-xs">
+                            <q-icon name="category" size="11px" class="q-mr-xs"/>{{ item.zona?.nombre || 'Sin sede' }}
+                        </div>
+                    </q-card-section>
+
+                    <q-separator/>
+
+                    <q-card-actions class="q-pa-sm" align="between">
+                        <span class="cat-badge" :class="getCatBadgeClass(item.tipo_categoria)">
+                            {{ item.tipo_categoria }}
+                        </span>
+                        <q-chip
+                            dense size="sm"
+                            :color="getStockColor(item)"
+                            text-color="white"
+                            class="text-caption"
+                        >
+                            {{ getStockLabel(item) }}
+                        </q-chip>
+                    </q-card-actions>
+                </q-card>
             </div>
         </div>
 
@@ -217,177 +178,177 @@ const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 
-// Estados reactivos
 const items = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const searchQuery = ref('');
-const estadoFiltro = ref(null);
+const categoriaFiltro = ref(null);
 
-// Opciones para el filtro de estado
-const estadoOptions = ['Disponible', 'Agotado'];
+const categoriaOptions = [
+    { label: 'Consumible',        value: 'Consumible' },
+    { label: 'De Uso Controlado', value: 'De Uso Controlado' },
+    { label: 'Equipo O Maquinaria', value: 'Equipo O Maquinaria' },
+];
 
-// Obtener parámetros de la ruta
-const categoriaId = computed(() => route.query.categoria);
-const categoriaNombre = computed(() => route.query.categoriaNombre);
-const aulaId = computed(() => route.query.aula);
+const zonaId    = computed(() => route.query.zona);
+const zonaNombre = computed(() => route.query.zonaNombre);
+const aulaId    = computed(() => route.query.aula);
 const aulaNombre = computed(() => route.query.aulaNombre);
 
-// Computed para filtrar ítems
 const filteredItems = computed(() => {
     let result = items.value;
-
-    // Filtrar por búsqueda
     if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase();
-        result = result.filter(item => 
-            item.nombre.toLowerCase().includes(query) ||
-            (item.descripcion && item.descripcion.toLowerCase().includes(query)) ||
-            item.tipo_categoria.toLowerCase().includes(query)
+        const q = searchQuery.value.toLowerCase();
+        result = result.filter(i =>
+            i.nombre.toLowerCase().includes(q) ||
+            (i.descripcion && i.descripcion.toLowerCase().includes(q))
         );
     }
-
-    // Filtrar por estado
-    if (estadoFiltro.value) {
-        result = result.filter(item => item.estado === estadoFiltro.value);
+    if (categoriaFiltro.value) {
+        result = result.filter(i => i.tipo_categoria === categoriaFiltro.value);
     }
-
     return result;
 });
 
-// Computed para estadísticas
-const disponiblesCount = computed(() => 
-    filteredItems.value.filter(item => item.estado === 'Disponible').length
-);
+const disponiblesCount = computed(() => filteredItems.value.filter(i => i.estado === 'Disponible').length);
+const agotadosCount    = computed(() => filteredItems.value.filter(i => i.estado === 'Agotado').length);
 
-const agotadosCount = computed(() => 
-    filteredItems.value.filter(item => item.estado === 'Agotado').length
-);
-
-// Función para cargar ítems
 const loadItems = async () => {
     loading.value = true;
     error.value = null;
-    
     try {
-        const params = {
-            categoria: categoriaId.value,
-            aula: aulaId.value
-        };
-
-        const data = await itemsService.getAll(params);
-        items.value = data;
-        
-        if (data.length === 0) {
-            $q.notify({
-                type: 'info',
-                message: 'No hay ítems en esta aula',
-                position: 'top',
-                timeout: 2000
-            });
-        }
+        items.value = await itemsService.getAll({ zona: zonaId.value, aula: aulaId.value });
     } catch (err) {
         console.error('Error cargando ítems:', err);
         error.value = 'Error al cargar los ítems. Por favor, intenta nuevamente.';
-        
-        $q.notify({
-            type: 'negative',
-            message: 'No se pudieron cargar los ítems',
-            position: 'top',
-            icon: 'error',
-            timeout: 3000
-        });
+        $q.notify({ type: 'negative', message: 'No se pudieron cargar los ítems', position: 'top', icon: 'error', timeout: 3000 });
     } finally {
         loading.value = false;
     }
 };
 
-// Función para navegar al detalle del ítem
 const goToItemDetail = (item) => {
-    router.push({
-        name: 'user.itemDetail',
-        params: { id: item._id }
-    });
+    router.push({ name: 'user.itemDetail', params: { id: item._id } });
 };
 
-// Función para volver a las aulas
 const goBack = () => {
-    router.push({
-        name: 'user.classrooms',
-        query: { 
-            categoria: categoriaId.value,
-            categoriaNombre: categoriaNombre.value
-        }
-    });
+    router.push({ name: 'user.classrooms', query: { zona: zonaId.value, zonaNombre: zonaNombre.value } });
 };
 
-// Función para obtener el color según el stock
 const getStockColor = (item) => {
-    const percentage = (item.cantidad_disponible / item.cantidad_total_stock) * 100;
-    if (percentage === 0) return 'negative';
-    if (percentage < 30) return 'warning';
-    if (percentage < 70) return 'info';
+    const pct = (item.cantidad_disponible / item.cantidad_total_stock) * 100;
+    if (pct === 0)  return 'negative';
+    if (pct < 30)   return 'warning';
+    if (pct < 70)   return 'info';
     return 'positive';
 };
 
-// Función para obtener la etiqueta del stock
 const getStockLabel = (item) => {
-    const percentage = (item.cantidad_disponible / item.cantidad_total_stock) * 100;
-    if (percentage === 0) return 'Sin stock';
-    if (percentage < 30) return 'Stock bajo';
-    if (percentage < 70) return 'Stock medio';
+    const pct = (item.cantidad_disponible / item.cantidad_total_stock) * 100;
+    if (pct === 0)  return 'Sin stock';
+    if (pct < 30)   return 'Stock bajo';
+    if (pct < 70)   return 'Stock medio';
     return 'Stock alto';
 };
 
-// Validar que haya aula y categoría seleccionada
+const getCatBadgeClass = (tipo) => {
+    if (tipo === 'Consumible')        return 'cat-badge--orange';
+    if (tipo === 'De Uso Controlado') return 'cat-badge--blue';
+    return 'cat-badge--purple';
+};
+
 const validateParams = () => {
-    if (!categoriaId.value || !aulaId.value) {
-        $q.notify({
-            type: 'warning',
-            message: 'Faltan parámetros de navegación',
-            position: 'top',
-            timeout: 2000
-        });
+    if (!zonaId.value || !aulaId.value) {
+        $q.notify({ type: 'warning', message: 'Faltan parámetros de navegación', position: 'top', timeout: 2000 });
         router.push('/user/zones');
     }
 };
 
-// Watch para recargar cuando cambien los parámetros
-watch([categoriaId, aulaId], () => {
-    if (categoriaId.value && aulaId.value) {
-        loadItems();
-    }
-});
-
-// Cargar ítems al montar el componente
-onMounted(() => {
-    validateParams();
-    if (categoriaId.value && aulaId.value) {
-        loadItems();
-    }
-});
+watch([zonaId, aulaId], () => { if (zonaId.value && aulaId.value) loadItems(); });
+onMounted(() => { validateParams(); if (zonaId.value && aulaId.value) loadItems(); });
 </script>
 
 <style scoped>
+.page-bg { background: #f5f5f5; }
+
+.header-icon-wrap {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #1a4f00, #39A900);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 2px 8px rgba(57,169,0,.3);
+}
+.lh-tight { line-height: 1.2; }
+.action-btn { border-radius: 8px !important; }
+
+.stat-chip {
+    border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    border: 2px solid transparent; min-height: 58px;
+}
+.stat-chip--blue  { background: #f0faf0; color: #39A900; border-color: #d4f0b0; }
+.stat-chip--green { background: #f0fdf4; color: #39A900; border-color: #d4f0b0; }
+.stat-chip--red   { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.stat-number { font-size: 20px; font-weight: 700; line-height: 1; }
+.stat-label  { font-size: 11px; font-weight: 500; opacity: .8; }
+
+.filter-card {
+    border-radius: 10px; border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05); background: #fafafa;
+}
+
+/* ── Item cards ─────────────────────────────────────────────── */
 .item-card {
-    transition: all 0.3s ease;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    transition: transform .2s, box-shadow .2s;
 }
-
 .item-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.13);
 }
 
-.ellipsis-2-lines {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.3em;
-    max-height: 2.6em;
+.item-img-container { position: relative; overflow: hidden; }
+.item-img { display: block; }
+.item-img-fallback {
+    height: 160px; display: flex; align-items: center; justify-content: center;
+    background: #f0f0f0;
+}
+
+.estado-badge {
+    position: absolute; top: 8px; right: 8px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+}
+.estado-badge--disponible { background: #eaf7d8; color: #2d8600; }
+.estado-badge--agotado    { background: #fee2e2; color: #b91c1c; }
+
+.stock-overlay {
+    position: absolute; bottom: 6px; left: 8px;
+    background: rgba(0,0,0,.55); color: white;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+}
+
+.item-name {
+    font-size: 13.5px; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     min-height: 2.6em;
+}
+
+/* ── Category badge ─────────────────────────────────────────── */
+.cat-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 600; letter-spacing: .2px;
+    max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cat-badge--orange { background: #fff8e6; color: #c2410c; border: 1px solid #fde9a0; }
+.cat-badge--blue   { background: #f0faf0; color: #2d8600; border: 1px solid #d4f0b0; }
+.cat-badge--purple { background: #f0fae8; color: #1a4f00; border: 1px solid #d4efc0; }
+
+@media (max-width: 599px) {
+    .page-bg { padding: 10px 8px !important; }
+    .stat-number { font-size: 17px; }
 }
 </style>

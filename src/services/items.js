@@ -16,6 +16,16 @@ export const itemsService = {
         return data
     },
 
+    async adjustStock(id, { tipo, cantidad, motivo }) {
+        const { data } = await api.post(`/items/${id}/ajuste-stock`, { tipo, cantidad, motivo })
+        return data
+    },
+
+    async getStockInfo(id) {
+        const { data } = await api.get(`/items/${id}/stock-info`)
+        return data
+    },
+
     async update(id, itemData) {
         const {data} = await api.put(`/items/${id}`, itemData)
         return data
@@ -23,33 +33,38 @@ export const itemsService = {
 
     async delete(id) {
         await api.delete(`/items/${id}`)
+    },
+
+    async bulkCreate(items) {
+        const { data } = await api.post('/items/bulk', { items })
+        return data
     }
 }
 
-export const categoriesService = {
+export const zonesService = {
     async getAll() {
-        const {data} = await api.get('/categorias')
+        const {data} = await api.get('/zonas')
         return data
     },
 
-    async create(categoryData) {
-        const {data} = await api.post('/categorias', categoryData)
+    async create(zoneData) {
+        const {data} = await api.post('/zonas', zoneData)
         return data
     },
 
-    async update(id, categoryData) {
-        const {data} = await api.put(`/categorias/${id}`, categoryData)
+    async update(id, zoneData) {
+        const {data} = await api.put(`/zonas/${id}`, zoneData)
         return data
     },
 
     async delete(id) {
-        await api.delete(`/categorias/${id}`)
+        await api.delete(`/zonas/${id}`)
     }
 }
 
 export const classroomsService = {
-    async getAll() {
-        const {data} = await api.get('/aulas')
+    async getAll(params = {}) {
+        const {data} = await api.get('/aulas', { params })
         return data
     },
 
@@ -79,18 +94,35 @@ export const loansService = {
         return data
     },
 
+    /**
+     * Crear préstamo multi-item.
+     * loanData = {
+     *   items: [{ item, aula, cantidad_prestamo, observacion_item? }],
+     *   fecha_sugerida_usuario: ISO string,
+     *   observacion_solicitud?: string
+     * }
+     */
     async create(loanData) {
         const {data} = await api.post('/prestamos', loanData)
         return data
     },
 
-    async approve(id, fecha_estimada) {
-        const {data} = await api.post(`/prestamos/${id}/aprobar`, {fecha_estimada})
+    /**
+     * Aprobar préstamo multi-item.
+     * body = {
+     *   fecha_estimada: ISO string,
+     *   approvals: [{ loanItemId, cantidad_aprobada }],
+     *   itemsToRemove: [loanItemId],
+     *   observacion_aprobacion?: string
+     * }
+     */
+    async approve(id, body) {
+        const {data} = await api.post(`/prestamos/${id}/aprobar`, body)
         return data
     },
 
-    async reject(id) {
-        const {data} = await api.post(`/prestamos/${id}/rechazar`)
+    async reject(id, observacion_rechazo) {
+        const {data} = await api.post(`/prestamos/${id}/rechazar`, { observacion_rechazo })
         return data
     },
 
@@ -101,6 +133,24 @@ export const loansService = {
 
     async delay(id, nueva_fecha_estimada) {
         const {data} = await api.post(`/prestamos/${id}/aplazar`, {nueva_fecha_estimada})
+        return data
+    },
+
+    /**
+     * Notificar devolución de un ítem específico del préstamo.
+     * payload = { loanItemId, cantidadDevuelta, observacion? }
+     */
+    async notifyReturn(id, payload) {
+        const { data: res } = await api.post(`/prestamos/${id}/notificar-devolucion`, payload)
+        return res
+    },
+
+    /**
+     * Admin confirma devolución parcial de un ítem.
+     * payload = { loanItemId, cantidadConfirmada, observacion_recepcion? }
+     */
+    async confirmPartialReturn(id, payload) {
+        const { data } = await api.post(`/prestamos/${id}/confirmar-parcial`, payload)
         return data
     },
 

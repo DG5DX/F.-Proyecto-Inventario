@@ -76,7 +76,6 @@
                         </template>
                     </q-btn>
 
-                    <!-- ENLACE DE RECUPERACIÓN DE CONTRASEÑA -->
                     <div class="text-center q-mt-md">
                         <q-btn
                             flat
@@ -120,7 +119,6 @@ const loading = ref(false);
 const router = useRouter();
 const $q = useQuasar();
 
-// Configura la URL base de la API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 
@@ -128,24 +126,19 @@ const handleLogin = async () => {
     loading.value = true;
 
     try {
-        // Realiza la petición al endpoint de login
         const response = await axios.post(`${API_URL}/auth/login`, {
             email: email.value,
             password: password.value
         });
 
-        // El backend devuelve: { token, nombre, rol }
         const { token, nombre, rol } = response.data;
 
-        // Guarda el token en localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('userNombre', nombre);
         localStorage.setItem('userRol', rol);
 
-        // Configura el token en los headers de axios para futuras peticiones
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        // Notificación de éxito
         $q.notify({
             type: 'positive',
             message: `¡Bienvenido ${nombre}! Acceso exitoso.`,
@@ -154,7 +147,6 @@ const handleLogin = async () => {
             timeout: 2500
         });
 
-        // Redirige según el rol del usuario
         setTimeout(() => {
             if (rol === 'Admin') {
                 router.push('/admin/dashboard');

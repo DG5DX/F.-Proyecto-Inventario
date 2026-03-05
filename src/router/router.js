@@ -12,11 +12,13 @@ import Classrooms from '../views/User/AulasDashboard.vue';
 import Items from '../views/User/ItemsDashboard.vue';
 import ItemD from '../views/User/ItemDetail.vue';
 import Loans from '../views/User/PrestamosDashboard.vue';
+import PanelPrestamo from '../views/User/PanelPrestamo.vue';
 
 // ADMIN
 import AdminLayout from '../views/Admin/AdminLayout.vue';
 import AulasGestion from '../views/Admin/AulasGestion.vue';
 import ItemsGestion from '../views/Admin/ItemsGestion.vue';
+import EquiposGestion from '../views/Admin/EquiposGestion.vue';
 import ZonasGestion from '../views/Admin/ZonasGestion.vue';
 import PrestamosAdmin from '../views/Admin/PrestamosAdmin.vue';
 import SolicitudesAdmin from '../views/Admin/SolicitudesAdmin.vue';
@@ -27,31 +29,19 @@ const router = createRouter({
     routes: [
 
         // ------------------- PUBLIC --------------------
-        {
-            path: '/',
-            name: 'login',
-            component: Login
-        },
-        {
-            path: '/register',
-            name: 'register',
-            component: Register
-        },
+        { path: '/',                name: 'login',         component: Login },
+        { path: '/register',        name: 'register',      component: Register },
         {
             path: '/forgot-password',
             name: 'forgotPassword',
             component: ForgotPassword,
-            meta: {
-                title: 'Recuperar Contraseña'
-            }
+            meta: { title: 'Recuperar Contraseña' }
         },
         {
             path: '/reset-password',
             name: 'resetPassword',
             component: ResetPassword,
-            meta: {
-                title: 'Restablecer Contraseña'
-            }
+            meta: { title: 'Restablecer Contraseña' }
         },
 
         // ------------------- USER --------------------
@@ -59,12 +49,13 @@ const router = createRouter({
             path: '/user',
             component: UserLayout,
             children: [
-                { path: 'dashboard', name: 'user.dashboard', component: Zones },
-                { path: 'zones', name: 'user.zones', component: Zones },
-                { path: 'classrooms', name: 'user.classrooms', component: Classrooms },
-                { path: 'items', name: 'user.items', component: Items },
-                { path: 'item/:id', name: 'user.itemDetail', component: ItemD },
-                { path: 'loans', name: 'user.loans', component: Loans }
+                { path: 'dashboard',  name: 'user.dashboard',   component: Zones },
+                { path: 'zones',      name: 'user.zones',        component: Zones },
+                { path: 'classrooms', name: 'user.classrooms',   component: Classrooms },
+                { path: 'items',      name: 'user.items',        component: Items },
+                { path: 'item/:id',   name: 'user.itemDetail',   component: ItemD },
+                { path: 'loans',      name: 'user.loans',        component: Loans },
+                { path: 'cart',       name: 'user.cart',         component: PanelPrestamo },
             ]
         },
 
@@ -73,25 +64,23 @@ const router = createRouter({
             path: '/admin',
             component: AdminLayout,
             children: [
-                { path: 'dashboard', name: 'admin.dashboard', component: SolicitudesAdmin },
-                { path: 'requests', name: 'admin.requests', component: SolicitudesAdmin },
-                { path: 'loans', name: 'admin.loans', component: PrestamosAdmin },
-                { path: 'zones', name: 'admin.zones', component: ZonasGestion },
+                { path: 'dashboard',  name: 'admin.dashboard',  component: SolicitudesAdmin },
+                { path: 'requests',   name: 'admin.requests',   component: SolicitudesAdmin },
+                { path: 'loans',      name: 'admin.loans',      component: PrestamosAdmin },
+                { path: 'zones',      name: 'admin.zones',      component: ZonasGestion },
                 { path: 'classrooms', name: 'admin.classrooms', component: AulasGestion },
-                { path: 'items', name: 'admin.items', component: ItemsGestion },
-                { path: 'users', name: 'admin.users', component: UsuariosGestion}
+                { path: 'items',      name: 'admin.items',      component: ItemsGestion },
+                { path: 'equipos',    name: 'admin.equipos',    component: EquiposGestion },
+                { path: 'users',      name: 'admin.users',      component: UsuariosGestion }
             ]
         }
-
     ]
 });
 
 router.beforeEach((to, from, next) => {
-    if (to.meta.title) {
-        document.title = `${to.meta.title} - Sistema de Inventario`;
-    } else {
-        document.title = 'Sistema de Inventario';
-    }
+    document.title = to.meta.title
+        ? `${to.meta.title} - Sistema de Inventario`
+        : 'Sistema de Inventario';
     next();
 });
 

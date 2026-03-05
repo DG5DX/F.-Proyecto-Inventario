@@ -1,6 +1,5 @@
 <template>
     <q-page class="q-pa-lg bg-grey-2">
-        <!-- Header -->
         <div class="row items-center q-mb-md">
             <q-icon name="people" size="md" color="primary" class="q-mr-sm"/>
             <div class="text-h5 text-weight-bold text-dark">Gestión de Usuarios</div>
@@ -16,7 +15,6 @@
             />
         </div>
 
-        <!-- Filtros -->
         <div class="row q-col-gutter-md q-mb-lg">
             <div class="col-12 col-md-6">
                 <q-input
@@ -48,13 +46,11 @@
             </div>
         </div>
 
-        <!-- Loading State -->
         <div v-if="loading && !users.length" class="text-center q-py-xl">
             <q-spinner-dots size="64px" color="primary" />
             <div class="text-h6 text-grey-6 q-mt-md">Cargando usuarios...</div>
         </div>
 
-        <!-- Error State -->
         <div v-else-if="error" class="text-center q-py-xl">
             <q-icon name="error_outline" size="64px" color="negative" class="q-mb-md"/>
             <div class="text-h6 text-negative">{{ error }}</div>
@@ -66,7 +62,6 @@
             />
         </div>
 
-        <!-- Card de usuarios -->
         <q-card v-else flat bordered class="q-mt-sm">
             <q-card-section class="row items-center">
                 <div class="text-h6">Listado de Usuarios</div>
@@ -81,7 +76,6 @@
 
             <q-separator />
 
-            <!-- Tabla de usuarios -->
             <q-card-section v-if="filteredUsers.length > 0">
                 <q-table
                     :rows="filteredUsers"
@@ -173,7 +167,6 @@
                 </q-table>
             </q-card-section>
 
-            <!-- Empty state -->
             <q-card-section v-else class="text-center text-grey-7 q-py-xl">
                 <q-icon name="people" size="64px" color="grey-5" class="q-mb-md"/>
                 <div class="text-h6">No se encontraron usuarios</div>
@@ -195,7 +188,7 @@
                 </q-toolbar>
 
                 <q-card-section>
-                    <q-banner class="bg-blue-1 text-primary q-mb-md" rounded dense>
+                    <q-banner class="bg-green-1 text-primary q-mb-md" rounded dense>
                         <template v-slot:avatar>
                             <q-icon name="info" color="primary" />
                         </template>
@@ -285,7 +278,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- Dialog promover a admin -->
         <q-dialog v-model="promoteDialog" persistent>
             <q-card style="width: 90vw; max-width: 450px;">
                 <q-card-section class="row items-center">
@@ -319,7 +311,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- Dialog degradar admin -->
         <q-dialog v-model="demoteDialog" persistent>
             <q-card style="width: 90vw; max-width: 450px;">
                 <q-card-section class="row items-center">
@@ -353,7 +344,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- Estadísticas -->
         <div v-if="users.length > 0" class="q-mt-lg text-center">
             <q-chip icon="people" color="primary" text-color="white">
                 {{ filteredUsers.length }} usuario(s)
@@ -391,17 +381,14 @@ const selectedUser = ref(null);
 const submitting = ref(false);
 const showPassword = ref(false);
 
-// Formulario de creación
 const createForm = ref({
     nombre: '',
     email: '',
     password: ''
 });
 
-// ID del usuario actual (para no permitir auto-degradarse)
 const currentUserId = ref(null);
 
-// Columnas de la tabla
 const columns = [
     { 
         name: 'nombre', 
@@ -433,16 +420,13 @@ const columns = [
     }
 ];
 
-// Computed para usuarios filtrados
 const filteredUsers = computed(() => {
     let result = users.value;
 
-    // Filtrar por rol
     if (rolFiltro.value && rolFiltro.value !== 'Todos') {
         result = result.filter(user => user.rol === rolFiltro.value);
     }
 
-    // Filtrar por búsqueda
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
         result = result.filter(user => 
@@ -454,7 +438,6 @@ const filteredUsers = computed(() => {
     return result;
 });
 
-// Computed para estadísticas
 const adminCount = computed(() => 
     filteredUsers.value.filter(user => user.rol === 'Admin').length
 );
@@ -463,7 +446,6 @@ const commonCount = computed(() =>
     filteredUsers.value.filter(user => user.rol === 'Comun').length
 );
 
-// Función para obtener el ID del usuario actual
 const loadCurrentUserId = () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -476,7 +458,6 @@ const loadCurrentUserId = () => {
     }
 };
 
-// Función para cargar usuarios
 const loadUsers = async () => {
     loading.value = true;
     error.value = null;
@@ -500,7 +481,6 @@ const loadUsers = async () => {
     }
 };
 
-// Función para formatear fechas
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -511,13 +491,11 @@ const formatDate = (dateString) => {
     });
 };
 
-// Función para obtener iniciales
 const getUserInitials = (nombre) => {
     if (!nombre) return '?';
     return nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 };
 
-// Función para abrir dialog de creación
 const openCreateDialog = () => {
     createForm.value = {
         nombre: '',
@@ -528,14 +506,13 @@ const openCreateDialog = () => {
     createDialog.value = true;
 };
 
-// Función para crear administrador
 const submitCreate = async () => {
     submitting.value = true;
 
     try {
         const payload = {
             ...createForm.value,
-            rol: 'Admin' // Forzar rol Admin
+            rol: 'Admin'
         };
 
         await api.post('/users', payload);
@@ -574,13 +551,11 @@ const submitCreate = async () => {
     }
 };
 
-// Función para confirmar promoción
 const confirmPromote = (user) => {
     selectedUser.value = user;
     promoteDialog.value = true;
 };
 
-// Función para promover usuario
 const promoteUser = async (user) => {
     if (!user) return;
 
@@ -618,13 +593,11 @@ const promoteUser = async (user) => {
     }
 };
 
-// Función para confirmar degradación
 const confirmDemote = (user) => {
     selectedUser.value = user;
     demoteDialog.value = true;
 };
 
-// Función para degradar admin
 const demoteUser = async (user) => {
     if (!user) return;
 
@@ -662,7 +635,6 @@ const demoteUser = async (user) => {
     }
 };
 
-// Cargar usuarios al montar
 onMounted(() => {
     loadCurrentUserId();
     loadUsers();
@@ -671,22 +643,22 @@ onMounted(() => {
 
 <style scoped>
 .bg-grey-2 {
-    background-color: #f0f4f8;
+    background-color: #f5f5f5;
 }
 
 .bg-warning-1 {
-    background-color: #fff4e5;
+    background-color: #fff8e6;
 }
 
 .text-warning {
-    color: #f57c00;
+    color: #F4A010;
 }
 
 .bg-info-1 {
-    background-color: #e3f2fd;
+    background-color: #edf7e5;
 }
 
 .text-info {
-    color: #0277bd;
+    color: #2d8600;
 }
 </style>

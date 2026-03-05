@@ -3,7 +3,6 @@
         <q-page-container>
             <q-page class="flex flex-center">
                 <q-card class="reset-card" flat bordered>
-                    <!-- Verificando token -->
                     <q-card-section v-if="verifying" class="text-center q-pa-xl">
                         <q-spinner-dots size="64px" color="primary" />
                         <div class="text-h6 text-grey-6 q-mt-md">
@@ -11,7 +10,6 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Token inválido -->
                     <q-card-section v-else-if="!tokenValid" class="q-pa-xl">
                         <div class="text-center">
                             <q-avatar size="80px" color="negative" text-color="white" class="q-mb-md">
@@ -50,7 +48,6 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Éxito -->
                     <q-card-section v-else-if="resetSuccess" class="q-pa-xl">
                         <div class="text-center">
                             <q-avatar size="80px" color="positive" text-color="white" class="q-mb-md">
@@ -74,7 +71,6 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Formulario -->
                     <q-card-section v-else class="q-pa-lg">
                         <div class="text-center q-mb-lg">
                             <q-avatar size="80px" color="primary" text-color="white" class="q-mb-md">
@@ -230,7 +226,7 @@ const handleSubmit = async () => {
 
 <style scoped>
 .bg-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #39A900 0%, #2d8600 100%);
     min-height: 100vh;
 }
 
@@ -243,10 +239,10 @@ const handleSubmit = async () => {
 }
 
 .bg-warning-1 {
-    background-color: #fff4e5;
+    background-color: #fff8e6;
 }
 
 .text-warning {
-    color: #f57c00;
+    color: #F4A010;
 }
 </style>

@@ -159,32 +159,26 @@ const loading = ref(false);
 const router = useRouter();
 const $q = useQuasar();
 
-// Configura la URL base de tu API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const handleRegister = async () => {
     loading.value = true;
 
     try {
-        // Realiza la petición al endpoint de registro
         const response = await axios.post(`${API_URL}/auth/register`, {
             nombre: nombre.value,
             email: email.value,
             password: password.value
         });
 
-        // El backend devuelve: { token, nombre, rol }
         const { token, nombre: userName, rol } = response.data;
 
-        // Guarda el token en localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('userNombre', userName);
         localStorage.setItem('userRol', rol);
 
-        // Configura el token en los headers de axios para futuras peticiones
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        // Notificación de éxito
         $q.notify({
             type: 'positive',
             message: `¡Bienvenido ${userName}! Tu cuenta ha sido creada exitosamente.`,
@@ -193,7 +187,6 @@ const handleRegister = async () => {
             timeout: 3000
         });
 
-        // Redirige según el rol del usuario
         setTimeout(() => {
             if (rol === 'Admin') {
                 router.push('/admin/dashboard');
