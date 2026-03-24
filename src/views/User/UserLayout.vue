@@ -1,7 +1,7 @@
 <template>
     <q-layout view="lHh LpR fFF">
         <q-header elevated class="bg-secondary text-white">
-            <q-toolbar style="background-color:#1a4f00">
+            <q-toolbar>
                 <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" aria-label="Toggle Menu" />
 
                 <q-toolbar-title>
@@ -11,7 +11,6 @@
 
                 <q-space />
 
-                <!-- Botón del carrito en header -->
                 <q-btn
                     flat round dense
                     icon="inventory"
@@ -28,13 +27,25 @@
                     <q-tooltip>Panel de Préstamo</q-tooltip>
                 </q-btn>
 
+                <q-btn
+                    v-if="isAdmin"
+                    flat dense no-caps
+                    icon="admin_panel_settings"
+                    label="Panel Admin"
+                    to="/admin/dashboard"
+                    class="q-mr-sm"
+                    color="white"
+                >
+                    <q-tooltip>Volver al panel de administración</q-tooltip>
+                </q-btn>
+
                 <div class="q-ml-sm row items-center no-wrap">
-                    <q-avatar size="36px" color="dark" text-color="white">
+                    <q-avatar size="36px" color="primary" text-color="white">
                         {{ userInitials }}
                     </q-avatar>
                     <div class="q-ml-sm gt-sm">
                         <div class="text-weight-medium text-body2">{{ userName }}</div>
-                        <div class="text-caption opacity-70">Usuario</div>
+                        <div class="text-caption opacity-70">{{ isAdmin ? 'Administrador' : 'Usuario' }}</div>
                     </div>
                 </div>
             </q-toolbar>
@@ -48,8 +59,8 @@
                 <div class="text-h6 text-weight-bold text-white q-mb-xs">
                     {{ userNombre }}
                 </div>
-                <q-chip size="md" color="primary" text-color="white" icon="person" class="q-mt-sm">
-                    Usuario
+                <q-chip size="md" :color="isAdmin ? 'orange-8' : 'primary'" text-color="white" :icon="isAdmin ? 'admin_panel_settings' : 'person'" class="q-mt-sm">
+                    {{ isAdmin ? 'Administrador' : 'Usuario' }}
                 </q-chip>
                 <q-separator dark class="q-mt-lg" />
             </div>
@@ -66,7 +77,7 @@
                         <q-icon name="view_module" size="md" />
                     </q-item-section>
                     <q-item-section>
-                        <q-item-label class="text-weight-medium">Catálogo</q-item-label>
+                        <q-item-label class="text-weight-medium">Navegación</q-item-label>
                         <q-item-label caption>Explorar inventario</q-item-label>
                     </q-item-section>
                 </q-item>
@@ -134,7 +145,6 @@
             <router-view />
         </q-page-container>
 
-        <!-- Dialog Ayuda -->
         <q-dialog v-model="showHelpDialog">
             <q-card style="width: 90vw; max-width: 520px;">
                 <q-card-section class="bg-primary text-white">
@@ -221,7 +231,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- Dialog Logout -->
         <q-dialog v-model="showLogoutDialog" persistent>
             <q-card style="width: 90vw; max-width: 400px;">
                 <q-card-section class="row items-center">
@@ -257,8 +266,12 @@ const showLogoutDialog = ref(false);
 const pendingLoansCount = ref(0);
 const userNombre = ref('Usuario');
 
-// Carrito
 const cartTotalItems = computed(() => cart.totalItems.value);
+
+const isAdmin = computed(() => {
+    const rol = localStorage.getItem('userRol');
+    return rol === 'Admin' || rol === 'SuperAdmin';
+});
 
 const loadUserData = () => {
     const nombre = localStorage.getItem('userNombre');
@@ -280,12 +293,14 @@ const confirmLogout    = () => { showLogoutDialog.value = true; };
 
 const logout = () => {
     showLogoutDialog.value = false;
-    // Limpiar carrito al cerrar sesión
-    cart.clearCart();
+
+    cart.clearCartMemory();
+
     localStorage.removeItem('token');
     localStorage.removeItem('userNombre');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userRol');
+    localStorage.removeItem('userId');
     $q.notify({ type: 'negative', message: 'Sesión cerrada exitosamente', position: 'top', icon: 'logout', timeout: 2000 });
     router.push('/');
 };
@@ -303,6 +318,21 @@ onMounted(async () => {
     loadUserData();
     await loadPendingLoansCount();
     setInterval(loadPendingLoansCount, 30000);
+
+    if (!cart.isEmpty.value) {
+        $q.notify({
+            type: 'info',
+            icon: 'inventory',
+            message: `Tienes ${cart.totalItems.value} ítem(s) guardado(s) en tu panel de préstamo`,
+            caption: `Ambiente: ${cart.cartAulaNombre.value || ''}`,
+            position: 'top',
+            timeout: 5000,
+            actions: [
+                { label: 'Ver panel', color: 'white', handler: () => router.push('/user/cart') },
+                { label: 'Descartar', color: 'grey-3', handler: () => cart.clearCart() },
+            ],
+        });
+    }
 });
 
 watch(() => localStorage.getItem('userNombre'), () => { loadUserData(); });

@@ -110,6 +110,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import { useLoanCart } from '../../services/loanCart.js';
 
 const email = ref('');
 const password = ref('');
@@ -118,6 +120,7 @@ const loading = ref(false);
 
 const router = useRouter();
 const $q = useQuasar();
+const cart = useLoanCart();
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -132,10 +135,16 @@ const handleLogin = async () => {
         });
 
         const { token, nombre, rol } = response.data;
+        const decoded = jwtDecode(token);
+        const userId = decoded.sub;
 
         localStorage.setItem('token', token);
         localStorage.setItem('userNombre', nombre);
         localStorage.setItem('userRol', rol);
+        localStorage.setItem('userId', userId);
+
+        // Reinicializar el carrito para cargar el del usuario que acaba de entrar
+        cart.initForUser(userId);
 
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
@@ -148,19 +157,17 @@ const handleLogin = async () => {
         });
 
         setTimeout(() => {
-            if (rol === 'Admin') {
+            if (rol === 'Admin' || rol === 'SuperAdmin') {
                 router.push('/admin/dashboard');
             } else {
-                router.push('/user/dashboard');
+                router.push('/user/loans');
             }
         }, 500);
 
     } catch (error) {
-        // Manejo de errores
         let errorMessage = 'Error de conexión con el servidor.';
 
         if (error.response) {
-            // El servidor respondió con un código de error
             switch (error.response.status) {
                 case 401:
                     errorMessage = 'Credenciales inválidas. Verifica tu correo y contraseña.';
@@ -175,7 +182,6 @@ const handleLogin = async () => {
                     errorMessage = error.response.data?.message || errorMessage;
             }
         } else if (error.request) {
-            // La petición se hizo pero no hubo respuesta
             errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión.';
         }
 

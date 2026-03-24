@@ -196,17 +196,14 @@ const handleRegister = async () => {
         }, 500);
 
     } catch (error) {
-        // Manejo de errores
         let errorMessage = 'Error de conexión con el servidor.';
 
         if (error.response) {
-            // El servidor respondió con un código de error
             switch (error.response.status) {
                 case 409:
                     errorMessage = 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro email.';
                     break;
                 case 422:
-                    // Errores de validación
                     if (error.response.data?.errors && error.response.data.errors.length > 0) {
                         const validationErrors = error.response.data.errors
                             .map(err => err.msg)
@@ -223,7 +220,6 @@ const handleRegister = async () => {
                     errorMessage = error.response.data?.message || errorMessage;
             }
         } else if (error.request) {
-            // La petición se hizo pero no hubo respuesta
             errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
         }
 

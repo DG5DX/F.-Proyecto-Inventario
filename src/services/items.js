@@ -6,6 +6,16 @@ export const itemsService = {
         return data
     },
 
+    async getInactivos(params = {}) {
+        const {data} = await api.get('/items', { params: { ...params, inactivos: true } })
+        return data
+    },
+
+    async reactivar(id) {
+        const {data} = await api.patch(`/items/${id}/reactivar`)
+        return data
+    },
+
     async getById(id) {
         const { data } = await api.get(`/items/${id}`)
         return data
@@ -47,6 +57,16 @@ export const zonesService = {
         return data
     },
 
+    async getInactivos() {
+        const {data} = await api.get('/zonas', { params: { inactivos: true } })
+        return data
+    },
+
+    async reactivar(id) {
+        const {data} = await api.patch(`/zonas/${id}/reactivar`)
+        return data
+    },
+
     async create(zoneData) {
         const {data} = await api.post('/zonas', zoneData)
         return data
@@ -65,6 +85,16 @@ export const zonesService = {
 export const classroomsService = {
     async getAll(params = {}) {
         const {data} = await api.get('/aulas', { params })
+        return data
+    },
+
+    async getInactivos(params = {}) {
+        const {data} = await api.get('/aulas', { params: { ...params, inactivos: true } })
+        return data
+    },
+
+    async reactivar(id) {
+        const {data} = await api.patch(`/aulas/${id}/reactivar`)
         return data
     },
 
@@ -156,5 +186,38 @@ export const loansService = {
 
     async delete(id) {
         await api.delete(`/prestamos/${id}`)
+    },
+
+    async forceClose(id, observacion_cierre) {
+        const { data } = await api.post(`/prestamos/${id}/forzar-cierre`, { observacion_cierre })
+        return data
+    }
+}
+
+export const cuentadantesService = {
+    async getAll() {
+        const { data } = await api.get('/cuentadantes')
+        return data
+    },
+
+    async getInactivos() {
+        const { data } = await api.get('/cuentadantes', { params: { inactivos: true } })
+        return data
+    },
+
+    async reactivar(id) {
+        const { data } = await api.patch(`/cuentadantes/${id}/reactivar`)
+        return data
+    },
+    async create(payload) {
+        const { data } = await api.post('/cuentadantes', payload)
+        return data
+    },
+    async update(id, payload) {
+        const { data } = await api.put(`/cuentadantes/${id}`, payload)
+        return data
+    },
+    async delete(id) {
+        await api.delete(`/cuentadantes/${id}`)
     }
 }

@@ -1,10 +1,9 @@
 <template>
     <q-page class="page-bg q-pa-md q-pa-sm-xs">
 
-        <!-- ── Header ────────────────────────────────────────────── -->
         <div class="page-header row items-center q-mb-md q-gutter-sm">
             <div class="row items-center col-12 col-sm-auto">
-                <div class="header-icon-wrap q-mr-sm">
+                <div class="header-icon-wrap q-mr-sm bg-orange">
                     <q-icon name="swap_horiz" size="22px" color="white"/>
                 </div>
                 <div>
@@ -23,7 +22,6 @@
             </div>
         </div>
 
-        <!-- ── Stat chips ─────────────────────────────────────────── -->
         <div v-if="loans.length > 0" class="row q-col-gutter-sm q-mb-md">
             <div class="col-6 col-sm-3">
                 <div class="stat-chip stat-chip--green"
@@ -63,7 +61,6 @@
             </div>
         </div>
 
-        <!-- ── Filter tabs ────────────────────────────────────────── -->
         <div class="row q-mb-md q-gutter-xs">
             <div v-for="opt in filterOptions" :key="opt.value ?? 'all'"
                 class="filter-tab" :class="{ 'filter-tab--active': estadoFiltro === opt.value }"
@@ -72,14 +69,12 @@
             </div>
         </div>
 
-        <!-- ── Error ──────────────────────────────────────────────── -->
         <div v-if="error" class="column items-center q-py-xl">
             <q-icon name="error_outline" size="56px" color="negative" class="q-mb-md"/>
             <div class="text-body1 text-negative">{{ error }}</div>
             <q-btn color="primary" label="Reintentar" @click="loadLoans" class="q-mt-md" unelevated/>
         </div>
 
-        <!-- ── Table ──────────────────────────────────────────────── -->
         <q-card v-else class="table-card" flat>
             <q-table
                 :rows="filteredLoans"
@@ -120,7 +115,6 @@
                     </q-td>
                 </template>
 
-                <!-- Columna Items: muestra todos los ítems del préstamo -->
                 <template v-slot:body-cell-item="props">
                     <q-td :props="props">
                         <div v-for="(li, idx) in getApprovedItems(props.row)" :key="li._id"
@@ -177,7 +171,6 @@
                         <span class="status-badge" :class="`status-badge--${getLoanDisplayEstado(props.row).css}`">
                             {{ getLoanDisplayEstado(props.row).label }}
                         </span>
-                        <!-- Indicador de ítems pendientes de confirmación -->
                         <div v-if="totalPendingConfirmations(props.row) > 0" class="q-mt-xs">
                             <q-badge color="teal" :label="`${totalPendingConfirmations(props.row)} ud. por confirmar`" style="font-size:9px;"/>
                         </div>
@@ -188,11 +181,10 @@
                     <q-td :props="props">
                         <div class="row no-wrap items-center justify-center" style="gap:2px;">
 
-                            <!-- Botón principal: gestionar devoluciones del préstamo completo -->
                             <q-btn
                                 v-if="['Aprobado', 'Aplazado'].includes(props.row.estado)"
                                 icon="assignment_return"
-                                :color="totalPendingConfirmations(props.row) > 0 ? 'teal' : (canCloseLoan(props.row) ? 'positive' : 'grey-5')"
+                                :color="totalPendingConfirmations(props.row) > 0 ? 'teal' : 'grey-5'"
                                 size="sm" round flat dense
                                 @click="openReturnManager(props.row)">
                                 <q-badge v-if="totalPendingConfirmations(props.row) > 0"
@@ -200,18 +192,17 @@
                                 <q-tooltip>
                                     {{ totalPendingConfirmations(props.row) > 0
                                         ? `Gestionar devoluciones (${totalPendingConfirmations(props.row)} ud. pendientes)`
-                                        : canCloseLoan(props.row) ? 'Cerrar préstamo' : 'Gestionar préstamo' }}
+                                        : 'Gestionar préstamo' }}
                                 </q-tooltip>
                             </q-btn>
 
-                            <!-- Descargar autorización de salida PDF (solo préstamos aprobados) -->
                             <q-btn
-                                v-if="['Aprobado', 'Aplazado'].includes(props.row.estado)"
+                                v-if="['Aprobado', 'Aplazado', 'Devuelto'].includes(props.row.estado)"
                                 icon="picture_as_pdf"
                                 color="negative"
                                 size="sm" round flat dense
                                 @click="descargarPDF(props.row)">
-                                <q-tooltip>Descargar autorización de salida (PDF)</q-tooltip>
+                                <q-tooltip>Descargar PDF del préstamo</q-tooltip>
                             </q-btn>
 
                             <q-btn v-if="canDelay(props.row)" icon="event_repeat" color="orange-8"
@@ -222,23 +213,24 @@
                                 @click="openDetailDialog(props.row)">
                                 <q-tooltip>Ver detalles</q-tooltip>
                             </q-btn>
-                            <q-btn icon="delete" color="negative" size="sm" round flat dense
-                                @click="confirmDelete(props.row)">
-                                <q-tooltip>Eliminar</q-tooltip>
+                            <q-btn
+                                v-if="['Devuelto'].includes(props.row.estado)"
+                                icon="history"
+                                color="blue-grey-7"
+                                size="sm" round flat dense
+                                @click="openHistoryDialog(props.row)">
+                                <q-tooltip>Ver historial completo del préstamo</q-tooltip>
                             </q-btn>
+
                         </div>
                     </q-td>
                 </template>
             </q-table>
         </q-card>
 
-        <!-- ═══════════════════════════════════════════════════════════════════
-             DIÁLOGO PRINCIPAL: Gestor de Devoluciones del Préstamo Completo
-        ════════════════════════════════════════════════════════════════════ -->
         <q-dialog v-model="returnManagerDialog" persistent maximized transition-show="slide-up" transition-hide="slide-down">
             <q-card class="return-manager-card">
 
-                <!-- Toolbar -->
                 <q-toolbar class="bg-teal text-white" style="min-height:56px;">
                     <q-icon name="assignment_return" size="sm" class="q-mr-sm"/>
                     <q-toolbar-title>
@@ -252,7 +244,6 @@
 
                 <q-card-section v-if="managedLoan" class="q-pa-md" style="overflow-y:auto;max-height:calc(100vh - 56px);">
 
-                    <!-- Info general del préstamo -->
                     <div class="row q-col-gutter-sm q-mb-md">
                         <div class="col-12 col-sm-4">
                             <div class="info-pill">
@@ -274,10 +265,8 @@
                         </div>
                     </div>
 
-                    <!-- ── Tarjeta por cada ítem aprobado ── -->
                     <div v-for="li in getApprovedItems(managedLoan)" :key="li._id" class="item-return-card q-mb-md">
 
-                        <!-- Cabecera del ítem -->
                         <div class="item-card-header row items-center q-pa-sm" style="gap:8px;">
                             <div class="item-type-dot"
                                 :class="li.item?.tipo_categoria === 'Consumible' ? 'dot-orange' : 'dot-blue'"/>
@@ -290,7 +279,6 @@
                                     </span>
                                 </div>
                             </div>
-                            <!-- Badge de estado del item -->
                             <div>
                                 <q-badge v-if="getItemReturnStatus(li) === 'completo'"
                                     :color="li.item?.tipo_categoria === 'Consumible' ? 'orange-8' : 'positive'"
@@ -307,7 +295,6 @@
 
                         <div class="q-pa-sm">
 
-                            <!-- Barra de progreso -->
                             <div class="row items-center q-mb-xs" style="gap:8px;">
                                 <span class="text-caption text-grey-6" style="min-width:90px;">Confirmadas</span>
                                 <q-linear-progress
@@ -327,7 +314,6 @@
                                 </span>
                             </div>
 
-                            <!-- Historial de devoluciones parciales -->
                             <div v-if="(li.devoluciones_parciales || []).length" class="q-mb-sm">
                                 <div class="text-caption text-grey-5 q-mb-xs" style="text-transform:uppercase;letter-spacing:.4px;">
                                     Historial
@@ -354,7 +340,6 @@
                                 </div>
                             </div>
 
-                            <!-- ── PANEL DE CONFIRMACIÓN (si hay pendientes) ── -->
                             <div v-if="getItemPendingQty(li) > 0" class="confirm-inline-panel q-pa-sm q-mt-xs">
                                 <div class="text-caption text-teal-9 text-weight-bold q-mb-sm">
                                     ⬇ Confirmar recepción física
@@ -415,7 +400,6 @@
                                 </div>
                             </div>
 
-                            <!-- Todo confirmado para este ítem -->
                             <div v-else-if="getItemReturnStatus(li) === 'completo'" class="all-confirmed-banner q-pa-xs q-mt-xs">
                                 <q-icon name="check_circle" color="positive" size="16px" class="q-mr-xs"/>
                                 <span class="text-caption text-positive text-weight-bold">
@@ -426,7 +410,6 @@
                         </div>
                     </div>
 
-                    <!-- ── Ítems ya devueltos ── -->
                     <div v-if="getReturnedItems(managedLoan).length" class="q-mb-md">
                         <div class="text-caption text-grey-5 q-mb-xs" style="text-transform:uppercase;letter-spacing:.4px;">
                             Ítems ya cerrados
@@ -442,40 +425,10 @@
                         </div>
                     </div>
 
-                    <!-- ── Acción de cierre completo del préstamo ── -->
-                    <q-separator class="q-my-md"/>
-                    <div class="row items-center justify-between">
-                        <div>
-                            <div class="text-subtitle2 text-weight-bold">Cierre del préstamo</div>
-                            <div class="text-caption text-grey-6">
-                                <template v-if="canCloseLoan(managedLoan)">
-                                    Todos los ítems devolutivos están confirmados. Puedes cerrar el préstamo.
-                                </template>
-                                <template v-else>
-                                    Aún hay ítems devolutivos pendientes de confirmación.
-                                </template>
-                            </div>
-                            <div v-if="canCloseLoan(managedLoan) && getApprovedItems(managedLoan).some(li => li.item?.tipo_categoria === 'Consumible' && (li.cantidad_confirmada || 0) < li.cantidad_prestamo)"
-                                class="text-caption text-orange-8 q-mt-xs">
-                                <q-icon name="info" size="12px" class="q-mr-xs"/>
-                                Hay consumibles con devolución parcial o sin confirmar. El cierre es definitivo.
-                            </div>
-                        </div>
-                        <q-btn
-                            label="Cerrar préstamo completo"
-                            icon="lock"
-                            :color="canCloseLoan(managedLoan) ? 'positive' : 'grey-4'"
-                            :disable="!canCloseLoan(managedLoan)"
-                            unelevated no-caps
-                            :loading="closingLoan"
-                            @click="executeFinalReturn(managedLoan)"/>
-                    </div>
-
                 </q-card-section>
             </q-card>
         </q-dialog>
 
-        <!-- ── Dialog Aplazar ─────────────────────────────────────── -->
         <q-dialog v-model="delayDialog" persistent>
             <q-card style="width: 450px; max-width: 95%;">
                 <q-toolbar class="bg-orange-8 text-white">
@@ -509,7 +462,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- ── Dialog Detalle ─────────────────────────────────────── -->
         <q-dialog v-model="detailDialog">
             <q-card style="width: 540px; max-width: 95%;">
                 <q-toolbar class="bg-blue-8 text-white">
@@ -583,7 +535,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- ── Dialog Eliminar ────────────────────────────────────── -->
         <q-dialog v-model="confirmDeleteDialog" persistent>
             <q-card style="width: 500px; max-width: 95%;">
                 <q-toolbar class="bg-negative text-white">
@@ -612,6 +563,152 @@
             </q-card>
         </q-dialog>
 
+        <q-dialog v-model="historyDialog" maximized>
+            <q-card class="history-dialog-card">
+                <q-toolbar class="bg-blue-grey-8 text-white">
+                    <q-icon name="history" size="sm" class="q-mr-sm"/>
+                    <q-toolbar-title class="text-weight-bold">
+                        Historial del Préstamo
+                        <span v-if="historyLoan" class="text-caption text-blue-grey-2 q-ml-sm">
+                            #{{ historyLoan._id.slice(-8).toUpperCase() }} — {{ historyLoan.usuario?.nombre }}
+                        </span>
+                    </q-toolbar-title>
+                    <q-btn flat round dense icon="picture_as_pdf" color="white" class="q-mr-sm"
+                        @click="descargarPDF(historyLoan)"
+                        v-if="historyLoan">
+                        <q-tooltip>Descargar PDF del préstamo</q-tooltip>
+                    </q-btn>
+                    <q-btn flat round dense icon="close" v-close-popup/>
+                </q-toolbar>
+
+                <q-card-section v-if="historyLoan" class="history-layout q-pa-md">
+
+                    <div class="history-summary">
+                        <div class="text-subtitle2 text-weight-bold text-blue-grey-8 q-mb-sm">Resumen</div>
+
+                        <div class="summary-card q-mb-sm">
+                            <div class="summary-row">
+                                <q-icon name="person" size="16px" color="primary"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Solicitante</div>
+                                    <div class="text-weight-medium">{{ historyLoan.usuario?.nombre }}</div>
+                                    <div class="text-caption text-grey-6">{{ historyLoan.usuario?.email }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row">
+                                <q-icon name="place" size="16px" color="teal"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Destino de salida</div>
+                                    <div class="text-weight-medium">{{ historyLoan.destino_salida || '—' }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row">
+                                <q-icon name="event" size="16px" color="orange"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Fecha préstamo</div>
+                                    <div class="text-weight-medium">{{ formatDate(historyLoan.fecha_prestamo) }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row">
+                                <q-icon name="event_available" size="16px" color="positive"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Fecha estimada devolución</div>
+                                    <div class="text-weight-medium">{{ formatDate(historyLoan.fecha_estimada) }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row" v-if="historyLoan.fecha_retorno">
+                                <q-icon name="check_circle" size="16px" color="teal"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Fecha cierre real</div>
+                                    <div class="text-weight-medium text-teal">{{ formatDate(historyLoan.fecha_retorno) }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row">
+                                <q-icon name="label" size="16px" color="blue-grey"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Estado final</div>
+                                    <q-badge :color="getStatusColor(historyLoan.estado)" :label="historyLoan.estado"/>
+                                </div>
+                            </div>
+                            <div class="summary-row" v-if="historyLoan.observacion_solicitud">
+                                <q-icon name="comment" size="16px" color="blue-grey"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Observación solicitud</div>
+                                    <div class="text-caption">{{ historyLoan.observacion_solicitud }}</div>
+                                </div>
+                            </div>
+                            <div class="summary-row" v-if="historyLoan.observacion_aprobacion">
+                                <q-icon name="admin_panel_settings" size="16px" color="positive"/>
+                                <div>
+                                    <div class="text-caption text-grey-6">Nota aprobación</div>
+                                    <div class="text-caption text-positive">{{ historyLoan.observacion_aprobacion }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-subtitle2 text-weight-bold text-blue-grey-8 q-mb-sm q-mt-md">Ítems prestados</div>
+                        <div v-for="li in historyLoan.items.filter(x => !['Eliminado','Rechazado'].includes(x.estado_item))"
+                            :key="li._id" class="item-summary-card q-mb-xs">
+                            <div class="row items-center justify-between">
+                                <div class="text-weight-medium text-dark" style="font-size:13px;">
+                                    {{ li.item?.nombre }}
+                                </div>
+                                <q-badge
+                                    :color="li.estado_item === 'Devuelto' ? 'teal' : li.estado_item === 'Usado' ? 'blue-grey' : 'orange'"
+                                    :label="li.estado_item" style="font-size:10px;"/>
+                            </div>
+                            <div class="text-caption text-grey-6 q-mt-xs">
+                                {{ li.item?.tipo_categoria }} · {{ li.aula?.nombre }}
+                            </div>
+                            <div class="row q-mt-xs" style="gap:12px;">
+                                <div class="text-caption">
+                                    <span class="text-grey-6">Prestado: </span>
+                                    <strong>{{ li.cantidad_prestamo }} ud.</strong>
+                                </div>
+                                <div class="text-caption">
+                                    <span class="text-grey-6">Confirmado: </span>
+                                    <strong class="text-teal">{{ li.cantidad_confirmada || 0 }} ud.</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="history-timeline-wrap">
+                        <div class="text-subtitle2 text-weight-bold text-blue-grey-8 q-mb-md">
+                            <q-icon name="timeline" size="18px" class="q-mr-xs"/>
+                            Línea de tiempo de eventos
+                        </div>
+
+                        <div class="timeline">
+                            <div v-for="(event, idx) in buildTimeline(historyLoan)"
+                                :key="idx"
+                                class="timeline-item"
+                                :class="'timeline-item--' + event.type">
+
+                                <div class="timeline-dot">
+                                    <q-icon :name="event.icon" size="14px" color="white"/>
+                                </div>
+                                <div class="timeline-line" v-if="idx < buildTimeline(historyLoan).length - 1"/>
+
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="timeline-title">{{ event.title }}</span>
+                                        <span class="timeline-date">{{ formatDate(event.date) }}</span>
+                                    </div>
+                                    <div v-if="event.body" class="timeline-body">{{ event.body }}</div>
+                                    <div v-if="event.meta" class="timeline-meta">{{ event.meta }}</div>
+                                    <div v-if="event.adminNote" class="timeline-admin-note">
+                                        <q-icon name="admin_panel_settings" size="12px" class="q-mr-xs"/>
+                                        Admin: {{ event.adminNote }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </q-card-section>
+            </q-card>
+        </q-dialog>
     </q-page>
 </template>
 
@@ -624,40 +721,26 @@ import { generarPdfSalida } from '../../services/loanPdfService.js';
 
 const $q = useQuasar();
 
-// ── Estado global ─────────────────────────────────────────────────────────────
-const loans        = ref([]);
-const loading      = ref(false);
-const error        = ref(null);
+const loans = ref([]);
+const loading = ref(false);
+const error = ref(null);
 const searchFilter = ref('');
 const estadoFiltro = ref(null);
-const submitting   = ref(false);
+const submitting = ref(false);
 
-// ── Diálogos secundarios ──────────────────────────────────────────────────────
-const delayDialog         = ref(false);
-const detailDialog        = ref(false);
+const delayDialog = ref(false);
+const detailDialog = ref(false);
 const confirmDeleteDialog = ref(false);
-const selectedLoan        = ref(null);
-const loanToDelete        = ref(null);
-const delayForm           = ref({ nueva_fecha_estimada: '' });
+const selectedLoan = ref(null);
+const loanToDelete = ref(null);
+const delayForm = ref({ nueva_fecha_estimada: '' });
 
-// ── Diálogo gestor de devoluciones ────────────────────────────────────────────
 const returnManagerDialog = ref(false);
-const managedLoan         = ref(null);   // loan completo que se está gestionando
-const closingLoan         = ref(false);
+const managedLoan = ref(null);
 
-/**
- * itemConfirmInputs: mapa reactivo por loanItem._id
- *   { [loanItemId]: { qty: number, obs: string } }
- */
 const itemConfirmInputs = reactive({});
-
-/**
- * confirmingItem: mapa reactivo de loading por loanItem._id
- *   { [loanItemId]: boolean }
- */
 const confirmingItem = reactive({});
 
-// ── Opciones de filtro ────────────────────────────────────────────────────────
 const filterOptions = [
     { label: 'Todos',      value: null,        icon: 'list' },
     { label: 'Aprobados',  value: 'Aprobado',  icon: 'check_circle' },
@@ -677,10 +760,11 @@ const columns = [
     { name: 'actions',        label: 'Acciones', field: 'actions',       align: 'center',                               style: 'width:140px' }
 ];
 
-// ── Computed ──────────────────────────────────────────────────────────────────
 const filteredLoans = computed(() => {
     if (!estadoFiltro.value) return loans.value;
     if (estadoFiltro.value === 'Vencido') return loans.value.filter(isOverdue);
+    // Aprobados incluye también los Aplazados (siguen siendo préstamos activos/aprobados)
+    if (estadoFiltro.value === 'Aprobado') return loans.value.filter(l => l.estado === 'Aprobado' || l.estado === 'Aplazado');
     return loans.value.filter(l => l.estado === estadoFiltro.value);
 });
 const overdueCount  = computed(() => loans.value.filter(isOverdue).length);
@@ -691,20 +775,13 @@ const minDelayDate  = computed(() => {
     return f.toISOString().slice(0, 16);
 });
 
-// ── Helpers de ítems ──────────────────────────────────────────────────────────
 const getApprovedItems = (loan) =>
     (loan?.items || []).filter(li => li.estado_item === 'Aprobado');
 
 const getReturnedItems = (loan) =>
     (loan?.items || []).filter(li => li.estado_item === 'Devuelto' || li.estado_item === 'Usado');
 
-/**
- * Estado semántico de un loanItem individual:
- *  - 'completo'           → todo confirmado
- *  - 'pendiente_admin'    → hay notificaciones sin confirmar del usuario
- *  - 'parcial'            → confirmado parcialmente, esperando más notificaciones
- *  - 'pendiente_usuario'  → el usuario no ha notificado nada aún
- */
+
 const getItemReturnStatus = (li) => {
     const confirmadas = li.cantidad_confirmada || 0;
     if (li.estado_item === 'Usado' || confirmadas >= li.cantidad_prestamo) return 'completo';
@@ -714,33 +791,17 @@ const getItemReturnStatus = (li) => {
     return 'pendiente_usuario';
 };
 
-/** Unidades notificadas por el usuario pendientes de revisión del admin
- *  (excluye las ya confirmadas y las marcadas como no_recibida) */
 const getItemPendingQty = (li) =>
     (li.devoluciones_parciales || [])
         .filter(d => !d.confirmado && !d.no_recibida)
         .reduce((s, d) => s + d.cantidad, 0);
 
-/** Máximo que el admin puede confirmar ahora */
 const getItemMaxConfirmable = (li) =>
     (li.cantidad_prestamo || 0) - (li.cantidad_confirmada || 0);
 
-// ── Total de unidades por confirmar en un préstamo (para badge en tabla) ──────
 const totalPendingConfirmations = (loan) =>
     getApprovedItems(loan).reduce((sum, li) => sum + getItemPendingQty(li), 0);
 
-// ── ¿Se puede cerrar el préstamo? (todos los ítems completamente confirmados) ─
-const canCloseLoan = (loan) => {
-    const activos = getApprovedItems(loan);
-    if (!activos.length) return false;
-    // Puede cerrar si todos los no-consumibles están confirmados completamente.
-    // Los consumibles no bloquean el cierre (el admin decide cuándo cerrar).
-    return activos
-        .filter(li => li.item?.tipo_categoria !== 'Consumible')
-        .every(li => (li.cantidad_confirmada || 0) >= li.cantidad_prestamo);
-};
-
-// ── Helpers generales ─────────────────────────────────────────────────────────
 const isOverdue    = (loan) => {
     if (!loan.fecha_estimada || ['Devuelto', 'Rechazado'].includes(loan.estado)) return false;
     return new Date(loan.fecha_estimada) < new Date();
@@ -749,14 +810,8 @@ const canDelay     = (loan) => ['Aprobado', 'Aplazado'].includes(loan.estado) &&
 const getRowClass  = (row)  => isOverdue(row) ? 'loan-expired' : '';
 const countByStatus= (s)    => loans.value.filter(l => l.estado === s).length;
 
-/** Genera y abre el PDF de autorización de salida para portería */
 const descargarPDF = (loan) => generarPdfSalida(loan);
-/**
- * Devuelve el label y clase CSS del estado del préstamo para la tabla.
- * Si el préstamo está 'Devuelto' y todos sus ítems son consumibles → "Consumido"
- * Si es mixto (consumibles + devolutivos) → "Dev./Consumido"
- * En cualquier otro caso → estado normal del préstamo
- */
+
 const getLoanDisplayEstado = (loan) => {
     if (loan.estado !== 'Devuelto') {
         return { label: loan.estado, css: loan.estado.toLowerCase() };
@@ -771,7 +826,6 @@ const getLoanDisplayEstado = (loan) => {
     return { label: 'Devuelto', css: 'devuelto' };
 };
 
-/** Devuelve el color Quasar correspondiente al estado de un préstamo */
 const getStatusColor = (estado) => {
     const map = {
         'Pendiente': 'orange',
@@ -783,11 +837,9 @@ const getStatusColor = (estado) => {
     return map[estado] || 'grey';
 };
 
-// ── Gestor de devoluciones ────────────────────────────────────────────────────
 
 const openReturnManager = (loan) => {
     managedLoan.value = loan;
-    // Inicializar inputs para cada ítem aprobado
     for (const li of getApprovedItems(loan)) {
         const pending = getItemPendingQty(li);
         itemConfirmInputs[li._id] = { qty: pending > 0 ? pending : 0, obs: '' };
@@ -805,13 +857,7 @@ const setItemInput = (loanItemId, field, value) => {
     itemConfirmInputs[loanItemId][field] = value;
 };
 
-/**
- * Valida si el input de qty de un loanItem tiene error:
- * - vacío / null / undefined
- * - no entero
- * - negativo
- * - supera el máximo confirmable
- */
+
 const hasItemQtyError = (li) => {
     const input = itemConfirmInputs[li._id];
     if (!input) return true;
@@ -824,10 +870,7 @@ const hasItemQtyError = (li) => {
     return false;
 };
 
-/**
- * Confirma recepción de unidades de UN ítem específico.
- * Llama a /confirmar-parcial con el loanItemId correspondiente.
- */
+
 const confirmSingleItem = async (loan, li) => {
     const input = itemConfirmInputs[li._id];
     if (input?.qty === null || input?.qty === undefined || input?.qty === '') return;
@@ -843,13 +886,10 @@ const confirmSingleItem = async (loan, li) => {
 
         $q.notify({
             type: 'positive',
-            message: result.cerrado
-                ? `✅ Préstamo cerrado. Ítem "${li.item?.nombre}" completamente devuelto.`
-                : `✅ ${input.qty} ud. de "${li.item?.nombre}" confirmadas y añadidas al stock.`,
+            message: `✅ ${input.qty} ud. de "${li.item?.nombre}" confirmadas y añadidas al stock.`,
             position: 'top', timeout: 4000
         });
 
-        // Refrescar datos del loan gestionado sin cerrar el diálogo
         await refreshManagedLoan(loan._id);
     } catch (err) {
         $q.notify({
@@ -863,50 +903,26 @@ const confirmSingleItem = async (loan, li) => {
 };
 
 
-/**
- * Refresca el loan en `managedLoan` y en la lista `loans` sin cerrar el diálogo.
- */
 const refreshManagedLoan = async (loanId) => {
     await loadLoans();
-    // Actualizar también managedLoan para que el diálogo refleje el estado actualizado
     const updated = loans.value.find(l => l._id === loanId);
     if (updated) {
         managedLoan.value = updated;
-        // Re-inicializar inputs para ítems que aún tienen pendientes
         for (const li of getApprovedItems(updated)) {
             const pending = getItemPendingQty(li);
             if (!itemConfirmInputs[li._id]) {
                 itemConfirmInputs[li._id] = { qty: pending || 1, obs: '' };
             } else {
-                // Actualizar qty pero conservar obs si hay algo escrito
                 itemConfirmInputs[li._id].qty = pending ?? 0;
             }
             confirmingItem[li._id] = false;
         }
     } else {
-        // El préstamo fue cerrado
         returnManagerDialog.value = false;
         managedLoan.value = null;
     }
 };
 
-/** Cierra el préstamo completo (todos los ítems confirmados) */
-const executeFinalReturn = async (loan) => {
-    closingLoan.value = true;
-    try {
-        await loansService.return(loan._id);
-        $q.notify({ type: 'positive', message: '✅ Préstamo cerrado exitosamente.', position: 'top', timeout: 4000 });
-        returnManagerDialog.value = false;
-        managedLoan.value = null;
-        await loadLoans();
-    } catch (err) {
-        $q.notify({ type: 'negative', message: err?.response?.data?.message || 'Error al cerrar el préstamo', position: 'top', timeout: 4000 });
-    } finally {
-        closingLoan.value = false;
-    }
-};
-
-// ── Aplazar ───────────────────────────────────────────────────────────────────
 const openDelayDialog = (loan) => {
     selectedLoan.value = loan;
     const d = new Date(loan.fecha_estimada);
@@ -931,7 +947,6 @@ const submitDelay = async () => {
     }
 };
 
-// ── Detalle / Eliminar ────────────────────────────────────────────────────────
 const openDetailDialog = (loan) => { selectedLoan.value = loan; detailDialog.value = true; };
 const confirmDelete    = (loan) => { loanToDelete.value = loan; confirmDeleteDialog.value = true; };
 
@@ -951,7 +966,6 @@ const executeDelete = async () => {
     }
 };
 
-// ── Carga de datos ────────────────────────────────────────────────────────────
 const loadLoans = async () => {
     loading.value = true;
     error.value   = null;
@@ -966,7 +980,6 @@ const loadLoans = async () => {
     }
 };
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
 const formatDate = (ds) => {
     if (!ds) return 'N/A';
     return new Date(ds).toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
@@ -997,13 +1010,109 @@ const exportToExcel = () => {
     }
 };
 
+
+const historyDialog = ref(false);
+const historyLoan   = ref(null);
+
+const openHistoryDialog = (loan) => {
+    historyLoan.value  = loan;
+    historyDialog.value = true;
+};
+
+const buildTimeline = (loan) => {
+    if (!loan) return [];
+    const events = [];
+
+    events.push({
+        type:  'solicitud',
+        icon:  'send',
+        title: 'Solicitud enviada',
+        date:  loan.fecha_solicitud || loan.createdAt,
+        body:  loan.observacion_solicitud || null,
+        meta:  loan.destino_salida ? `Destino: ${loan.destino_salida}` : null,
+    });
+
+    if (loan.fecha_prestamo) {
+        events.push({
+            type:  'aprobado',
+            icon:  'check_circle',
+            title: 'Préstamo aprobado',
+            date:  loan.fecha_prestamo,
+            body:  loan.observacion_aprobacion || null,
+            meta:  loan.fecha_estimada ? `Devolución estimada: ${formatDate(loan.fecha_estimada)}` : null,
+        });
+    }
+    if (loan.estado === 'Rechazado' && loan.observacion_rechazo) {
+        events.push({
+            type:  'rechazado',
+            icon:  'cancel',
+            title: 'Préstamo rechazado',
+            date:  loan.updatedAt,
+            body:  loan.observacion_rechazo,
+        });
+    }
+
+    for (const li of (loan.items || [])) {
+        if (['Eliminado', 'Rechazado', 'Pendiente'].includes(li.estado_item)) continue;
+        const itemName = li.item?.nombre || 'Ítem';
+        for (const d of (li.devoluciones_parciales || [])) {
+            events.push({
+                type:  'notificacion',
+                icon:  'notification_important',
+                title: `Devolución notificada — ${itemName}`,
+                date:  d.fecha,
+                body:  d.observacion || null,
+                meta:  `${d.cantidad} ud. notificadas por el usuario`,
+            });
+            if (d.confirmado && d.fecha_confirmacion) {
+                events.push({
+                    type:      'confirmado',
+                    icon:      'verified',
+                    title:     `Devolución confirmada — ${itemName}`,
+                    date:      d.fecha_confirmacion,
+                    meta:      `${d.cantidad} ud. recibidas y confirmadas`,
+                    adminNote: d.observacion_recepcion || null,
+                });
+            } else if (d.no_recibida) {
+                events.push({
+                    type:  'no_recibida',
+                    icon:  'block',
+                    title: `No recibida — ${itemName}`,
+                    date:  d.fecha_confirmacion || d.fecha,
+                    meta:  `${d.cantidad} ud. marcadas como no recibidas`,
+                    adminNote: d.observacion_recepcion || null,
+                });
+            }
+        }
+    }
+
+    if (loan.fecha_retorno) {
+        events.push({
+            type:  'cerrado',
+            icon:  'lock',
+            title: 'Préstamo cerrado',
+            date:  loan.fecha_retorno,
+            meta:  'Todos los ítems confirmados. Stock restaurado.',
+        });
+    } else if (loan.estado === 'Devuelto') {
+        events.push({
+            type:  'cerrado',
+            icon:  'lock',
+            title: 'Préstamo cerrado',
+            date:  loan.updatedAt,
+            meta:  'Todos los ítems confirmados. Stock restaurado.',
+        });
+    }
+
+    return events.sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
 onMounted(loadLoans);
 </script>
 
 <style scoped>
 .page-bg { background: #f1f5f9; min-height: 100vh; }
 
-/* Header */
 .header-icon-wrap {
     width:38px;height:38px;border-radius:10px;
     background:linear-gradient(135deg,#0d9488,#2563eb);
@@ -1012,7 +1121,6 @@ onMounted(loadLoans);
 .lh-tight { line-height:1.2; }
 .action-btn { border-radius:8px; }
 
-/* Stat chips */
 .stat-chip {
     border-radius:12px;padding:12px 14px;
     display:flex;align-items:center;gap:8px;
@@ -1029,7 +1137,6 @@ onMounted(loadLoans);
 .stat-chip--red    { color:#dc2626; }
 .stat-chip--blue   { color:#1d4ed8; }
 
-/* Filter tabs */
 .filter-tab {
     padding:7px 14px;border-radius:20px;font-size:13px;
     font-weight:600;cursor:pointer;transition:all .18s;
@@ -1039,7 +1146,6 @@ onMounted(loadLoans);
 .filter-tab:hover { background:#f8fafc;border-color:#94a3b8; }
 .filter-tab--active { background:#0d9488;color:white;border-color:#0d9488; }
 
-/* Table */
 .table-card { border-radius:14px;border:1px solid #e2e8f0;overflow:hidden; }
 .data-table :deep(thead tr th) {
     background:#f8fafc;font-weight:700;font-size:11px;
@@ -1050,7 +1156,6 @@ onMounted(loadLoans);
 .data-table :deep(tbody tr:hover td) { background:#f8fafc!important; }
 .search-input { min-width:200px;max-width:280px; }
 
-/* Overdue */
 .overdue-pill {
     display:inline-flex;align-items:center;background:#dc2626;color:white;
     border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;
@@ -1059,7 +1164,6 @@ onMounted(loadLoans);
 .loan-expired { background:#fff5f5!important; }
 .loan-expired :deep(td) { border-bottom-color:#fecaca!important; }
 
-/* Status badges */
 .status-badge {
     display:inline-block;padding:3px 10px;border-radius:20px;
     font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
@@ -1072,7 +1176,6 @@ onMounted(loadLoans);
 .status-badge--consumido { background:#fff3e0;color:#e65100; }
 .status-badge--mixto     { background:#ede7f6;color:#6a1b9a; }
 
-/* ── Return Manager Dialog ─────────────────────────────────────────────── */
 .return-manager-card { display:flex;flex-direction:column;height:100%; }
 
 .info-pill {
@@ -1080,7 +1183,6 @@ onMounted(loadLoans);
     padding:8px 12px;font-size:13px;display:flex;align-items:center;
 }
 
-/* Tarjeta de ítem */
 .item-return-card {
     border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;
     background:white;transition:border-color .2s;
@@ -1094,7 +1196,6 @@ onMounted(loadLoans);
 .dot-orange { background:#f97316; }
 .dot-blue   { background:#3b82f6; }
 
-/* Panel de confirmación inline */
 .confirm-inline-panel {
     background:#f0fdfa;border:1.5px dashed #2dd4bf;border-radius:8px;
 }
@@ -1103,16 +1204,13 @@ onMounted(loadLoans);
     padding:6px 10px;display:flex;align-items:center;
 }
 
-/* Historial */
 .devolucion-row { padding:4px 0; }
 
-/* Ítems devueltos */
 .returned-item-row {
     background:#f8fafc;border-radius:6px;
     display:flex;align-items:center;
 }
 
-/* Responsive */
 @media (max-width:599px) {
     .page-bg { padding:10px 8px!important; }
     .stat-chip { padding:10px;gap:6px; }
@@ -1121,4 +1219,137 @@ onMounted(loadLoans);
     .search-input { min-width:140px;max-width:100%; }
 }
 @media (max-width:400px) { .stat-label { display:none; } }
+
+.history-dialog-card { display:flex; flex-direction:column; height:100%; background:#f8fafc; }
+
+.history-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    overflow: hidden;
+    height: calc(100vh - 64px);
+}
+
+.history-summary {
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.history-timeline-wrap {
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.summary-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.summary-row .q-icon { margin-top: 2px; flex-shrink: 0; }
+
+.item-summary-card {
+    background: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    border-left: 3px solid #64b5f6;
+}
+
+.timeline { position: relative; padding-left: 0; }
+
+.timeline-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    position: relative;
+    padding-bottom: 4px;
+}
+
+.timeline-dot {
+    grid-column: 1;
+    grid-row: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+    box-shadow: 0 2px 6px rgba(0,0,0,.18);
+}
+
+.timeline-line {
+    grid-column: 1;
+    grid-row: 2;
+    width: 2px;
+    min-height: 20px;
+    background: #e2e8f0;
+    margin: 2px auto 0;
+}
+
+.timeline-content {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    background: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.timeline-title  { font-weight: 600; font-size: 13px; color: #1e293b; }
+.timeline-date   { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+.timeline-body   { font-size: 12px; color: #475569; margin-top: 4px; }
+.timeline-meta   { font-size: 11px; color: #64748b; margin-top: 4px; font-style: italic; }
+.timeline-admin-note {
+    font-size: 11px; color: #0d9488; margin-top: 6px;
+    background: #f0fdfa; border-radius: 4px; padding: 4px 8px;
+    display: flex; align-items: center;
+}
+
+.timeline-item--solicitud    .timeline-dot { background: #3b82f6; }
+.timeline-item--solicitud    .timeline-content { border-left: 3px solid #3b82f6; }
+.timeline-item--aprobado     .timeline-dot { background: #22c55e; }
+.timeline-item--aprobado     .timeline-content { border-left: 3px solid #22c55e; }
+.timeline-item--rechazado    .timeline-dot { background: #ef4444; }
+.timeline-item--rechazado    .timeline-content { border-left: 3px solid #ef4444; }
+.timeline-item--notificacion .timeline-dot { background: #f59e0b; }
+.timeline-item--notificacion .timeline-content { border-left: 3px solid #f59e0b; }
+.timeline-item--confirmado   .timeline-dot { background: #0d9488; }
+.timeline-item--confirmado   .timeline-content { border-left: 3px solid #0d9488; }
+.timeline-item--no_recibida  .timeline-dot { background: #f97316; }
+.timeline-item--no_recibida  .timeline-content { border-left: 3px solid #f97316; }
+.timeline-item--cerrado      .timeline-dot { background: #475569; }
+.timeline-item--cerrado      .timeline-content { border-left: 3px solid #475569; }
+
+@media (max-width: 700px) {
+    .history-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+}
+
 </style>

@@ -1,5 +1,4 @@
 import senaLogoUrl from '../assets/sena_logo.jpg';
-// ─── Paleta SENA ─────────────────────────────────────────────────────────────
 const VERDE      = [57, 169, 0];
 const VERDE_OSC  = [26, 79, 0];
 const NEGRO      = [17, 17, 17];
@@ -39,7 +38,7 @@ function cargarJsPDF() {
 }
 
 async function precargarLogo() {
-    if (drawHeader._logoB64) return; // ya en cache
+    if (drawHeader._logoB64) return; 
     try {
         const resp = await fetch(senaLogoUrl);
         const blob = await resp.blob();
@@ -69,7 +68,7 @@ export async function generarPdfSalida(loan) {
     y = drawHeader(doc, y);
     y = drawAutorizacion(doc, loan, y + 3);
     y = drawItemsTable(doc, loan, y + 2);
-    y = drawCuentadante(doc, y + 2);
+    y = drawCuentadante(doc, loan, y + 2);
     y = drawTipoPermiso(doc, y + 2);
     y = drawFechas(doc, loan, y + 2);
     y = drawFirmas(doc, y + 4);
@@ -97,7 +96,6 @@ function L(doc, x1, y1, x2, y2, color = GRIS, lw = 0.2) {
     doc.line(x1, y1, x2, y2);
 }
 
-/** Fallback: dibuja texto SENA si la imagen no cargó */
 function _drawLogoFallback(doc, y, logoW, totalH) {
     R(doc, ML, y, logoW, totalH, { fill: VERDE_OSC });
     T(doc, 'SENA', ML + logoW / 2, y + 9,    { size: 14, bold: true, color: BLANCO, align: 'center' });
@@ -119,7 +117,6 @@ function drawHeader(doc, y) {
         _drawLogoFallback(doc, y, logoW, totalH);
     }
 
-    // Título
     const tx = ML + logoW + 2;
     R(doc, tx, y, titleW, totalH, { stroke: VERDE });
     const lines = [
@@ -133,7 +130,6 @@ function drawHeader(doc, y) {
     let ty = y + 4.5;
     lines.forEach(l => { if (l) T(doc, l, tx + titleW / 2, ty, { size: 6, bold: true, align: 'center' }); ty += 3.2; });
 
-    // Info versión
     const ix = tx + titleW + 2;
     R(doc, ix, y, infoW, totalH, { stroke: VERDE });
     T(doc, 'Versión: 2',          ix + 2, y + 5,    { size: 6, bold: true });
@@ -205,10 +201,15 @@ function drawItemsTable(doc, loan, y) {
     return y + headerH + maxRows * rowH;
 }
 
-function drawCuentadante(doc, y) {
+function drawCuentadante(doc, loan, y) {
     const h = 7;
     R(doc, ML, y, CW, h, { stroke: VERDE });
-    T(doc, 'Cuentadante Principal:  Nombre completo: ________________________________________  Firma: _______________________________', ML + 3, y + 4.5, { size: 6.5 });
+    // Tomar el cuentadante del primer ítem aprobado del préstamo
+    const aprobados = (loan?.items || []).filter(li => ['Aprobado', 'Devuelto', 'Usado'].includes(li.estado_item));
+    // Si el préstamo tiene cuentadante_principal seleccionado al aprobar, usarlo; si no, tomar del primer ítem
+    const cuentadante = loan.cuentadante_principal || aprobados[0]?.item?.cuentadante;
+    const nombreCuentadante = cuentadante?.nombre || '______________________________________';
+    T(doc, `Cuentadante Principal:  Nombre completo: ${nombreCuentadante}  Firma: _______________________________`, ML + 3, y + 4.5, { size: 6.5 });
     return y + h;
 }
 
@@ -241,8 +242,10 @@ function drawFechas(doc, loan, y) {
     const aulaName     = loan.items?.[0]?.aula?.nombre || '_______________________________';
     T(doc, `Fecha de salida autorizada:  ${fechaSalida}`,   ML + 3,      y + 4.5, { size: 7 });
     T(doc, `Fecha de regreso autorizada:  ${fechaRegreso}`, ML + 3,      y + 9,   { size: 7 });
-    T(doc, `Con destino a:  ${truncate(aulaName, 35)}`,     ML + CW / 2, y + 4.5, { size: 7 });
+    T(doc, `Préstamo del ambiente:  ${truncate(aulaName, 35)}`,     ML + CW / 2, y + 4.5, { size: 7 });
+    T(doc, `Préstamo con destino a:  ${truncate(loan.destino_salida || '____________________', 30)}`,   ML + CW / 2, y + 9,   { size: 7 });
     L(doc, ML + CW / 2 + 24, y + 5.5, ML + CW - 2, y + 5.5, GRIS, 0.2);
+    
     return y + h;
 }
 

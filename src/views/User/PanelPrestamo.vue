@@ -1,7 +1,14 @@
 <template>
     <q-page class="page-bg q-pa-md">
         <q-breadcrumbs class="text-secondary q-mb-md">
-            <q-breadcrumbs-el label="Catálogo" icon="view_module" to="/user/zones" class="cursor-pointer" />
+            <q-breadcrumbs-el label="Navegación" icon="view_module" to="/user/zones" class="cursor-pointer" />
+            <q-breadcrumbs-el
+                v-if="cart.cartAulaNombre.value"
+                :label="cart.cartAulaNombre.value"
+                icon="meeting_room"
+                class="cursor-pointer"
+                @click="goToCartAula"
+            />
             <q-breadcrumbs-el label="Panel de Préstamo" icon="inventory" />
         </q-breadcrumbs>
 
@@ -14,29 +21,38 @@
                 <div class="text-caption text-grey-6">
                     {{ cart.totalItems.value }} equipo(s) · {{ cart.totalUnidades.value }} unidad(es) en total
                 </div>
+                <q-chip
+                    v-if="cart.cartAulaNombre.value"
+                    dense square
+                    color="teal-1" text-color="teal-9"
+                    icon="meeting_room"
+                    class="q-mt-xs q-ml-none"
+                    style="cursor:pointer"
+                    @click="goToCartAula"
+                >
+                    {{ cart.cartAulaNombre.value }}
+                    <q-tooltip>Volver a este ambiente</q-tooltip>
+                </q-chip>
             </div>
             <q-space />
             <q-btn v-if="!cart.isEmpty.value" flat dense no-caps color="negative" icon="delete_sweep"
                 label="Vaciar panel" @click="confirmClear = true" class="q-mr-sm" />
             <q-btn flat dense no-caps color="primary" icon="add_circle_outline"
-                label="Añadir más equipos" to="/user/zones" />
+                label="Añadir más equipos" @click="goToCartAula" />
         </div>
 
-        <!-- ── Vacío ─────────────────────────────────────────────────────── -->
         <div v-if="cart.isEmpty.value" class="empty-state column items-center justify-center q-py-xl">
             <q-icon name="inventory_2" size="80px" color="grey-4" />
             <div class="text-h6 text-grey-6 q-mt-md q-mb-sm">Tu panel de préstamo está vacío</div>
             <div class="text-caption text-grey-5 q-mb-lg text-center" style="max-width:320px">
-                Navega el catálogo, entra al detalle de un equipo y haz clic en
+                Navega por las sedes y ambientes, entra al detalle de un equipo y haz clic en
                 <strong>"Añadir al panel"</strong>.
             </div>
             <q-btn color="primary" icon="view_module" label="Explorar Catálogo" to="/user/zones" unelevated />
         </div>
 
-        <!-- ── Contenido ─────────────────────────────────────────────────── -->
         <div v-else class="row q-col-gutter-lg">
 
-            <!-- Lista -->
             <div class="col-12 col-lg-8">
                 <q-card class="cart-card" flat bordered>
                     <q-card-section class="q-pb-sm">
@@ -102,7 +118,6 @@
                 </q-card>
             </div>
 
-            <!-- Resumen -->
             <div class="col-12 col-lg-4">
                 <q-card class="summary-card" flat bordered>
                     <q-card-section>
@@ -134,6 +149,17 @@
                             </q-input>
                             <div class="text-caption text-grey-5 q-mb-md">El administrador puede ajustar al aprobar.</div>
                         </template>
+
+                        <div class="text-caption text-grey-7 q-mb-xs">Destino de salida <span class="text-negative">*</span></div>
+                        <q-input v-model="destinoSalida" outlined dense
+                            maxlength="120" placeholder="Ej: Aula taller 3, Biblioteca, Hogar del aprendiz..." class="q-mb-sm"
+                            :rules="[val => !!val?.trim() || 'Indica el destino del préstamo']"
+                            hide-bottom-space lazy-rules>
+                            <template v-slot:prepend>
+                                <q-icon name="place" size="16px" color="primary" />
+                            </template>
+                        </q-input>
+                        <div class="text-caption text-grey-5 q-mb-md">¿A dónde llevarás los elementos?</div>
 
                         <div class="text-caption text-grey-7 q-mb-xs">Observación general (opcional)</div>
                         <q-input v-model="observacionGeneral" outlined dense type="textarea" rows="2"
@@ -187,7 +213,6 @@
             </div>
         </div>
 
-        <!-- ── Confirm send ──────────────────────────────────────────────── -->
         <q-dialog v-model="confirmDialog" persistent>
             <q-card style="width:500px;max-width:96%">
                 <q-card-section class="row items-center bg-primary text-white">
@@ -213,6 +238,12 @@
                         </q-item>
                     </q-list>
                     <div class="row items-center q-mb-sm">
+                        <q-icon name="place" color="primary" class="q-mr-sm" />
+                        <div class="text-body2">
+                            <strong>Destino:</strong> {{ destinoSalida || '—' }}
+                        </div>
+                    </div>
+                    <div class="row items-center q-mb-sm">
                         <q-icon name="event" color="primary" class="q-mr-sm" />
                         <div class="text-body2">
                             <template v-if="todoConsumible">
@@ -235,7 +266,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- ── Confirm clear ─────────────────────────────────────────────── -->
         <q-dialog v-model="confirmClear" persistent>
             <q-card style="width:360px;max-width:96%">
                 <q-card-section class="row items-center">
@@ -250,7 +280,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- ── Confirmar eliminar ítem individual ───────────────────────── -->
 <q-dialog v-model="confirmRemove" persistent>
     <q-card style="min-width: 320px; max-width: 420px; border-radius: 14px;">
         <q-card-section class="row items-center q-pb-none">
@@ -269,7 +298,6 @@
     </q-card>
 </q-dialog>
 
-        <!-- ── Resultado ─────────────────────────────────────────────────── -->
         <q-dialog v-model="resultDialog" persistent>
             <q-card style="width:440px;max-width:96%">
                 <q-card-section class="row items-center bg-positive text-white">
@@ -307,6 +335,7 @@ const cart = useLoanCart();
 
 const fechaGlobal        = ref('');
 const observacionGeneral = ref('');
+const destinoSalida      = ref('');
 const submitting         = ref(false);
 const confirmDialog      = ref(false);
 const confirmClear       = ref(false);
@@ -330,7 +359,8 @@ const fechaError = computed(() => {
 });
 const canSubmit  = computed(() => {
     if (cart.isEmpty.value) return false;
-    if (todoConsumible.value) return true;          // sin fecha requerida
+    if (!destinoSalida.value?.trim()) return false;  // destino obligatorio siempre
+    if (todoConsumible.value) return true;
     return !!fechaGlobal.value && !fechaError.value;
 });
 
@@ -343,7 +373,6 @@ const onCantidadInput = (entry, val) => {
     if (!isNaN(n)) cart.updateCantidad(entry.item._id, n);
 };
 
-// Estado para el diálogo de confirmación de eliminación individual
 const confirmRemove      = ref(false);
 const pendingRemoveId    = ref(null);
 const pendingRemoveName  = ref('');
@@ -386,6 +415,7 @@ const submitLoan = async () => {
             ? { fecha_sugerida_usuario: new Date(fechaGlobal.value).toISOString() }
             : {}),
         ...(observacionGeneral.value ? { observacion_solicitud: observacionGeneral.value } : {}),
+        ...(destinoSalida.value?.trim() ? { destino_salida: destinoSalida.value.trim() } : {}),
     };
 
     try {
@@ -394,6 +424,7 @@ const submitLoan = async () => {
         cart.clearCart();
         observacionGeneral.value = '';
         fechaGlobal.value        = '';
+        destinoSalida.value      = '';
         resultDialog.value       = true;
     } catch (err) {
         $q.notify({
@@ -409,6 +440,26 @@ const submitLoan = async () => {
 
 const goToLoans   = () => { resultDialog.value = false; router.push('/user/loans'); };
 const goToCatalog = () => { resultDialog.value = false; router.push('/user/zones'); };
+
+/**
+ * Navega de vuelta al ambiente (aula) del que provienen los ítems del carrito.
+ * Si el carrito está vacío (no debería pasar), va a sedes.
+ */
+const goToCartAula = () => {
+    const zonaId    = cart.cartZonaId.value;
+    const zonaNombre = cart.cartZonaNombre.value;
+    const aulaId    = cart.cartAulaId.value;
+    const aulaNombre = cart.cartAulaNombre.value;
+
+    if (aulaId && zonaId) {
+        router.push({
+            name: 'user.items',
+            query: { zona: zonaId, zonaNombre, aula: aulaId, aulaNombre },
+        });
+    } else {
+        router.push('/user/zones');
+    }
+};
 </script>
 
 <style scoped>

@@ -1,7 +1,6 @@
 <template>
     <q-page class="page-bg q-pa-md q-pa-sm-xs">
 
-        <!-- ── Breadcrumb ───────────────────────────────────────────── -->
         <q-breadcrumbs class="q-mb-md" active-color="primary">
             <q-breadcrumbs-el label="Sedes" icon="view_module" to="/user/zones" class="cursor-pointer text-grey-6"/>
             <q-breadcrumbs-el :label="zonaNombre || 'Sede'" icon="category"
@@ -10,7 +9,6 @@
             <q-breadcrumbs-el :label="aulaNombre || 'Ambiente'" icon="meeting_room" class="text-primary text-weight-medium"/>
         </q-breadcrumbs>
 
-        <!-- ── Header ──────────────────────────────────────────────── -->
         <div class="row items-center q-mb-md q-gutter-sm">
             <div class="row items-center col-12 col-sm-auto">
                 <q-btn icon="arrow_back" flat round dense color="primary" @click="goBack" class="q-mr-xs">
@@ -31,7 +29,6 @@
             </q-btn>
         </div>
 
-        <!-- ── Stat chips ───────────────────────────────────────────── -->
         <div v-if="items.length > 0" class="row q-col-gutter-sm q-mb-md">
             <div class="col-4">
                 <div class="stat-chip stat-chip--blue">
@@ -62,7 +59,6 @@
             </div>
         </div>
 
-        <!-- ── Filtros ───────────────────────────────────────────────── -->
         <q-card flat class="filter-card q-mb-md">
             <q-card-section class="q-py-sm">
                 <div class="row q-col-gutter-sm">
@@ -84,20 +80,17 @@
             </q-card-section>
         </q-card>
 
-        <!-- ── Loading ───────────────────────────────────────────────── -->
         <div v-if="loading" class="text-center q-py-xl">
             <q-spinner-dots size="56px" color="primary"/>
             <div class="text-body2 text-grey-6 q-mt-md">Cargando ítems...</div>
         </div>
 
-        <!-- ── Error ────────────────────────────────────────────────── -->
         <div v-else-if="error" class="text-center q-py-xl">
             <q-icon name="error_outline" size="56px" color="negative" class="q-mb-md"/>
             <div class="text-body1 text-negative">{{ error }}</div>
             <q-btn color="primary" label="Reintentar" @click="loadItems" class="q-mt-md" unelevated/>
         </div>
 
-        <!-- ── Empty ────────────────────────────────────────────────── -->
         <div v-else-if="filteredItems.length === 0" class="text-center q-py-xl">
             <q-icon name="search_off" size="56px" color="grey-4" class="q-mb-md"/>
             <div class="text-body1 text-grey-6">
@@ -106,7 +99,6 @@
             <q-btn color="primary" label="Volver a Ambientes" icon="arrow_back" class="q-mt-md" unelevated @click="goBack"/>
         </div>
 
-        <!-- ── Grid de ítems ─────────────────────────────────────────── -->
         <div v-else class="row q-col-gutter-md">
             <div
                 v-for="item in filteredItems"
@@ -114,7 +106,6 @@
                 class="col-12 col-sm-6 col-md-4 col-lg-3"
             >
                 <q-card class="item-card cursor-pointer" @click="goToItemDetail(item)">
-                    <!-- Imagen -->
                     <div class="item-img-container">
                         <q-img
                             :src="item.imagen || ''"
@@ -128,11 +119,9 @@
                                 </div>
                             </template>
                         </q-img>
-                        <!-- Badge estado flotante -->
                         <span class="estado-badge" :class="item.estado === 'Disponible' ? 'estado-badge--disponible' : 'estado-badge--agotado'">
                             {{ item.estado }}
                         </span>
-                        <!-- Stock overlay -->
                         <div class="stock-overlay">
                             <q-icon name="inventory" size="12px"/>
                             {{ item.cantidad_disponible }} / {{ item.cantidad_total_stock }}
@@ -164,7 +153,6 @@
                 </q-card>
             </div>
         </div>
-
     </q-page>
 </template>
 
@@ -185,7 +173,7 @@ const searchQuery = ref('');
 const categoriaFiltro = ref(null);
 
 const categoriaOptions = [
-    { label: 'Consumible',        value: 'Consumible' },
+    { label: 'Consumible', value: 'Consumible' },
     { label: 'De Uso Controlado', value: 'De Uso Controlado' },
     { label: 'Equipo O Maquinaria', value: 'Equipo O Maquinaria' },
 ];
@@ -296,7 +284,6 @@ onMounted(() => { validateParams(); if (zonaId.value && aulaId.value) loadItems(
     box-shadow: 0 1px 4px rgba(0,0,0,.05); background: #fafafa;
 }
 
-/* ── Item cards ─────────────────────────────────────────────── */
 .item-card {
     border-radius: 12px; overflow: hidden;
     border: 1px solid #e0e0e0;
@@ -337,7 +324,6 @@ onMounted(() => { validateParams(); if (zonaId.value && aulaId.value) loadItems(
     min-height: 2.6em;
 }
 
-/* ── Category badge ─────────────────────────────────────────── */
 .cat-badge {
     display: inline-block; padding: 2px 8px; border-radius: 20px;
     font-size: 10px; font-weight: 600; letter-spacing: .2px;

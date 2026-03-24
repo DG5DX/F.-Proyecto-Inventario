@@ -1,7 +1,6 @@
 <template>
     <q-page class="page-bg q-pa-md">
 
-        <!-- Header -->
         <div class="row items-center q-mb-md">
             <div class="header-icon-wrap q-mr-sm">
                 <q-icon name="pending_actions" size="22px" color="white"/>
@@ -15,21 +14,18 @@
                 @click="loadRequests" :loading="loading"/>
         </div>
 
-        <!-- Error -->
         <div v-if="error" class="column items-center q-py-xl">
             <q-icon name="error_outline" size="56px" color="negative" class="q-mb-md"/>
             <div class="text-body1 text-negative">{{ error }}</div>
             <q-btn color="primary" label="Reintentar" @click="loadRequests" class="q-mt-md" unelevated/>
         </div>
 
-        <!-- Empty -->
         <q-card v-else-if="!loading && pendingRequests.length === 0" flat class="q-pa-xl text-center">
             <q-icon name="check_circle" size="64px" color="positive" class="q-mb-md"/>
             <div class="text-h6 text-positive">¡Todo al día!</div>
             <div class="text-body1 text-grey-6">No hay solicitudes pendientes</div>
         </q-card>
 
-        <!-- Table -->
         <q-card v-else flat class="table-card">
             <q-card-section class="row items-center q-pb-sm">
                 <div class="text-subtitle2 text-weight-bold">
@@ -106,7 +102,6 @@
             </q-table>
         </q-card>
 
-        <!-- ── Dialog Aprobar ── -->
         <q-dialog v-model="approveDialog" persistent>
             <q-card style="width:600px;max-width:98%">
                 <q-toolbar class="bg-positive text-white">
@@ -123,10 +118,16 @@
                     </div>
 
                     <q-banner v-if="selectedRequest?.fecha_sugerida_usuario" rounded
-                        class="bg-green-9-1 text-green-10 q-mb-sm" dense>
+                        class="bg-purple-1 text-purple-9 q-mb-sm" dense>
                         <template v-slot:avatar><q-icon name="event" color="purple"/></template>
                         <strong>Fecha sugerida por el usuario:</strong>
                         {{ formatDate(selectedRequest.fecha_sugerida_usuario) }}
+                    </q-banner>
+
+                    <q-banner v-if="selectedRequest?.destino_salida" rounded
+                        class="bg-teal-1 text-teal-9 q-mb-sm" dense>
+                        <template v-slot:avatar><q-icon name="place" color="teal"/></template>
+                        <strong>Destino de salida:</strong> {{ selectedRequest.destino_salida }}
                     </q-banner>
 
                     <q-banner v-if="selectedRequest?.observacion_solicitud" rounded
@@ -174,7 +175,6 @@
                                 </div>
                             </div>
 
-                            <!-- Input cantidad aprobada -->
                             <div v-if="!li._toRemove" style="min-width:155px">
                                 <q-input
                                     v-model.number="li._cantAprobada"
@@ -225,8 +225,8 @@
 
                     <q-form @submit.prevent="submitApproval" class="q-gutter-md q-mt-md">
                         <template v-if="todoConsumible">
-                            <q-banner rounded class="bg-green-1 text-green-10" dense>
-                                <template v-slot:avatar><q-icon name="recycling" color="primary" size="18px"/></template>
+                            <q-banner rounded class="bg-teal-1 text-teal-9" dense>
+                                <template v-slot:avatar><q-icon name="recycling" color="teal" size="18px"/></template>
                                 <div class="text-caption">
                                     <strong>Préstamo de solo consumibles.</strong> No se requiere fecha de devolución.
                                 </div>
@@ -251,6 +251,32 @@
                             type="textarea" rows="2" filled color="positive" counter maxlength="500">
                             <template v-slot:prepend><q-icon name="comment" color="positive"/></template>
                         </q-input>
+
+                        <q-select
+                            v-if="hayMultiplesCuentadantes"
+                            v-model="cuentadante_principal"
+                            :options="cuentadantesDelPrestamo"
+                            option-label="nombre"
+                            label="Cuentadante principal para el PDF *"
+                            filled color="positive"
+                            :rules="[val => !!val || 'Debes seleccionar el cuentadante principal']"
+                        >
+                            <template v-slot:prepend><q-icon name="badge" color="positive"/></template>
+                            <template v-slot:option="scope">
+                                <q-item v-bind="scope.itemProps">
+                                    <q-item-section avatar>
+                                        <q-icon name="badge" color="positive"/>
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-label>{{ scope.opt.nombre }}</q-item-label>
+                                        <q-item-label caption>CC {{ scope.opt.numero_identificacion }}</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+                            </template>
+                            <template v-slot:hint>
+                                Este préstamo tiene ítems con distintos cuentadantes. Elige el que aparecerá en la autorización PDF.
+                            </template>
+                        </q-select>
 
                         <q-banner class="bg-green-1 text-green-9" rounded dense>
                             <template v-slot:avatar><q-icon name="info" color="green" size="18px"/></template>
@@ -279,7 +305,6 @@
             </q-card>
         </q-dialog>
 
-        <!-- Dialog Rechazar -->
         <q-dialog v-model="rejectDialog" persistent>
             <q-card style="width:95vw;max-width:460px">
                 <q-toolbar class="bg-negative text-white">
@@ -325,7 +350,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
-import { loansService } from '../../services/items.js';
+import { loansService, cuentadantesService } from '../../services/items.js';
 
 const $q = useQuasar();
 
@@ -345,6 +370,26 @@ const requestToReject = ref(null);
 const rejecting       = ref(false);
 const rejectForm      = ref({ observacion: '' });
 
+// ── Cuentadante principal al aprobar ──────────────────────────────────────────
+const cuentadante_principal = ref(null);
+
+/**
+ * Lista de cuentadantes únicos presentes en los ítems activos del préstamo.
+ * Si todos son el mismo, no se muestra el selector.
+ */
+const cuentadantesDelPrestamo = computed(() => {
+    const vistos = new Map();
+    for (const li of approvalItems.value.filter(l => !l._toRemove && l._cantAprobada > 0)) {
+        const c = li.item?.cuentadante;
+        if (c && !vistos.has(c._id || c)) {
+            vistos.set(c._id || c, c);
+        }
+    }
+    return [...vistos.values()];
+});
+
+const hayMultiplesCuentadantes = computed(() => cuentadantesDelPrestamo.value.length > 1);
+
 const columns = [
     { name: 'id',             required: true, label: 'ID',              align: 'left',   field: '_id',                           sortable: true,  format: v => v.slice(-6).toUpperCase() },
     { name: 'items',          align: 'left',  label: 'Equipos / Ítems', field: 'items',  sortable: false },
@@ -360,7 +405,6 @@ const minReturnDate = computed(() => {
     return now.toISOString().slice(0, 16);
 });
 
-/** true si todos los ítems activos (no eliminados) son Consumibles */
 const todoConsumible = computed(() =>
     approvalItems.value.length > 0 &&
     approvalItems.value
@@ -376,7 +420,6 @@ const effectiveActiveItems = computed(() =>
     approvalItems.value.filter(li => !li._toRemove && li._cantAprobada > 0)
 );
 
-/** Ítems no marcados para eliminar pero con cantidad = 0 (se eliminarán implícitamente). */
 const zeroQtyItems = computed(() =>
     approvalItems.value.filter(li => !li._toRemove && li._cantAprobada === 0)
 );
@@ -388,8 +431,8 @@ const zeroQtyItems = computed(() =>
  */
 const hasValidationErrors = computed(() => {
     if (effectiveActiveItems.value.length === 0) return true;
-    // Fecha requerida solo si hay ítems no-consumibles
     if (!todoConsumible.value && !approvalForm.value.fecha_estimada) return true;
+    if (hayMultiplesCuentadantes.value && !cuentadante_principal.value) return true;
     return approvalItems.value
         .filter(li => !li._toRemove)
         .some(li => {
@@ -427,13 +470,13 @@ const openApproveDialog = (request) => {
     selectedRequest.value = request;
     approvalItems.value = (request.items || []).map(li => ({
         ...li,
-        _cantAprobada: li.cantidad_prestamo,   // por defecto: lo que pidió
+        _cantAprobada: li.cantidad_prestamo,
         _toRemove:     false,
     }));
     approvalForm.value.observacion_aprobacion = '';
+    cuentadante_principal.value = null;
     approveDialog.value = true;
 
-    // Pre-llenar fecha solo si hay ítems no consumibles
     const hayNoConsumible = (request.items || []).some(li => li.item?.tipo_categoria !== 'Consumible');
     if (hayNoConsumible) {
         if (request.fecha_sugerida_usuario) {
@@ -461,7 +504,6 @@ const submitApproval = async () => {
         return;
     }
 
-    // Validación de stock solo para ítems activos con cantidad > 0
     for (const li of effectiveActiveItems.value) {
         if ((li.item?.cantidad_disponible ?? 0) < li._cantAprobada) {
             $q.notify({
@@ -475,7 +517,6 @@ const submitApproval = async () => {
 
     submitting.value = true;
     try {
-        // Los ítems con cantidad = 0 se envían como itemsToRemove (igual que _toRemove)
         const itemsToRemove = [
             ...approvalItems.value.filter(li => li._toRemove).map(li => li._id),
             ...zeroQtyItems.value.map(li => li._id),
@@ -492,6 +533,7 @@ const submitApproval = async () => {
             approvals,
             itemsToRemove,
             observacion_aprobacion: approvalForm.value.observacion_aprobacion || undefined,
+            cuentadante_principal: cuentadante_principal.value?._id || cuentadante_principal.value || undefined,
         });
 
         $q.notify({ type: 'positive', message: '✅ Préstamo aprobado exitosamente', position: 'top', timeout: 3000 });
@@ -530,16 +572,16 @@ onMounted(loadRequests);
 </script>
 
 <style scoped>
-.page-bg { background: #f0f0f0; min-height: 100vh; }
+.page-bg { background: #f1f5f9; min-height: 100vh; }
 .header-icon-wrap {
     width: 38px; height: 38px; border-radius: 10px;
-    background: linear-gradient(135deg, #F4A010, #F4A010);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     display: flex; align-items: center; justify-content: center;
 }
-.table-card { border-radius: 14px; border: 1px solid #e0e0e0; overflow: hidden; }
+.table-card { border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; }
 
 .item-edit-row {
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid #e2e8f0;
     border-radius: 10px;
     padding: 10px 12px;
     background: white;

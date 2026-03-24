@@ -1,10 +1,9 @@
 <template>
     <q-page class="page-bg q-pa-md q-pa-sm-lg">
 
-        <!-- ── Header ──────────────────────────────────────────── -->
         <div class="page-header q-mb-md row items-center justify-between">
             <div class="row items-center gap-3" style="gap:12px">
-                <div class="header-icon-wrap">
+                <div class="header-icon-wrap bg-orange">
                     <q-icon name="assignment" color="white" size="20px"/>
                 </div>
                 <div class="lh-tight">
@@ -15,7 +14,6 @@
             <q-btn class="action-btn" color="primary" icon="refresh" label="Actualizar" outline size="sm" @click="loadLoans" :loading="loading"/>
         </div>
 
-        <!-- ── Stat chips ───────────────────────────────────────── -->
         <div class="row q-col-gutter-sm q-mb-md">
             <div class="col-6 col-sm-3">
                 <div class="stat-chip stat-chip--grey" :class="{ 'stat-chip--active': estadoFiltro === 'Pendiente' }" @click="estadoFiltro = estadoFiltro === 'Pendiente' ? null : 'Pendiente'">
@@ -47,7 +45,6 @@
             </div>
         </div>
 
-        <!-- ── Filter bar ─────────────────────────────────────── -->
         <div class="filter-bar q-mb-md">
             <div class="filter-bar__inner">
                 <button v-for="tab in filterTabs" :key="tab.value ?? 'all'" class="filter-tab" :class="{ 'filter-tab--active': estadoFiltro === tab.value }" @click="estadoFiltro = tab.value">
@@ -58,7 +55,6 @@
             </div>
         </div>
 
-        <!-- ── Loading / Error / Empty ─────────────────────────── -->
         <div v-if="loading && !loans.length" class="text-center q-py-xl">
             <q-spinner-dots size="64px" color="primary" />
             <div class="text-h6 text-grey-6 q-mt-md">Cargando préstamos...</div>
@@ -79,7 +75,6 @@
             <q-btn color="primary" label="Explorar Catálogo" icon="view_module" @click="router.push('/user/zones')"/>
         </div>
 
-        <!-- ── Table ────────────────────────────────────────────── -->
         <div v-else class="table-card">
             <div class="row items-center q-px-md q-pt-md q-pb-sm">
                 <div class="text-subtitle2 text-grey-7">{{ filteredLoans.length }} préstamo(s)</div>
@@ -101,7 +96,6 @@
                 flat
                 class="data-table"
             >
-                <!-- Equipo: itera los items del préstamo -->
                 <template v-slot:body-cell-item="props">
                     <q-td :props="props">
                         <div v-for="(li, idx) in props.row.items?.filter(i => i.estado_item !== 'Eliminado' && i.estado_item !== 'Rechazado')" :key="li._id" :class="idx > 0 ? 'q-mt-xs' : ''">
@@ -114,7 +108,6 @@
                     </q-td>
                 </template>
 
-                <!-- Cantidad: una por item -->
                 <template v-slot:body-cell-cantidad="props">
                     <q-td :props="props" class="text-center">
                         <div v-for="li in props.row.items?.filter(i => i.estado_item !== 'Eliminado' && i.estado_item !== 'Rechazado')" :key="li._id">
@@ -125,14 +118,12 @@
                     </q-td>
                 </template>
 
-                <!-- F. Solicitud -->
                 <template v-slot:body-cell-fecha_solicitud="props">
                     <q-td :props="props" class="text-center">
                         <div class="cell-primary">{{ formatDate(props.row.fecha_solicitud) }}</div>
                     </q-td>
                 </template>
 
-                <!-- F. Devolución -->
                 <template v-slot:body-cell-fecha_estimada="props">
                     <q-td :props="props" class="text-center">
                         <div v-if="props.row.fecha_estimada">
@@ -147,7 +138,6 @@
                     </q-td>
                 </template>
 
-                <!-- Estado -->
                 <template v-slot:body-cell-status="props">
                     <q-td :props="props" class="text-center">
                         <span class="status-badge" :class="`status-badge--${isOverdue(props.row) ? 'vencido' : getLoanDisplayEstado(props.row).css}`">
@@ -156,20 +146,16 @@
                     </q-td>
                 </template>
 
-                <!-- ══ ACCIONES: lógica multi-item corregida ══ -->
                 <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
 
-                        <!-- Pendiente -->
                         <div v-if="props.row.estado === 'Pendiente'" class="text-center">
                             <q-btn icon="schedule" label="Esperando" color="grey" size="sm" flat dense disable>
                                 <q-tooltip>Esperando aprobación del administrador</q-tooltip>
                             </q-btn>
                         </div>
 
-                        <!-- Activo: itera cada sub-item con estado_item === 'Aprobado' -->
                         <div v-else-if="['Aprobado', 'Aplazado'].includes(props.row.estado)">
-                            <!-- Botón PDF autorización de salida -->
                             <div class="q-mb-sm text-center">
                                 <q-btn
                                     icon="picture_as_pdf"
@@ -185,7 +171,6 @@
                                 :key="li._id"
                                 class="q-mb-xs"
                             >
-                                <!-- CONSUMIBLE -->
                                 <template v-if="li.item?.tipo_categoria === 'Consumible'">
                                     <q-btn
                                         v-if="!li.notificacion_devolucion_enviada"
@@ -202,9 +187,7 @@
                                     </q-chip>
                                 </template>
 
-                                <!-- NO CONSUMIBLE -->
                                 <template v-else>
-                                    <!-- Hay notificación sin confirmar → bloquear -->
                                     <div v-if="tieneNotificacionPendiente(li)">
                                         <q-chip dense color="teal-1" text-color="teal-9" icon="hourglass_top" size="sm">
                                             Pend. confirmación
@@ -214,7 +197,6 @@
                                             {{ li.cantidad_devuelta || 0 }} notif. · {{ li.cantidad_confirmada || 0 }} conf.
                                         </div>
                                     </div>
-                                    <!-- Puede notificar más unidades -->
                                     <div v-else-if="getLiPendiente(li) > 0">
                                         <q-btn
                                             icon="assignment_return"
@@ -228,7 +210,6 @@
                                             ✓ {{ li.cantidad_confirmada }} confirmado(s) por admin
                                         </div>
                                     </div>
-                                    <!-- Todo confirmado (edge case: admin confirmó pero no cerró) -->
                                     <q-chip v-else dense color="green-1" text-color="green-9" icon="check_circle" size="sm">
                                         Completamente devuelto
                                         <q-tooltip>{{ li.item?.nombre }}: todas las unidades confirmadas.</q-tooltip>
@@ -236,7 +217,6 @@
                                 </template>
                             </div>
 
-                            <!-- Sin items activos pero préstamo aún abierto -->
                             <div v-if="!props.row.items?.some(i => i.estado_item === 'Aprobado')">
                                 <q-chip dense color="grey-2" text-color="grey-7" icon="hourglass_top" size="sm">
                                     Esperando cierre
@@ -245,7 +225,6 @@
                             </div>
                         </div>
 
-                        <!-- Devuelto -->
                         <div v-else-if="props.row.estado === 'Devuelto'" class="text-center">
                             <q-icon name="check_circle" color="positive" size="sm" class="q-mr-xs">
                                 <q-tooltip>Préstamo completado el {{ formatDate(props.row.fecha_retorno) }}</q-tooltip>
@@ -259,7 +238,6 @@
                             </q-btn>
                         </div>
 
-                        <!-- Rechazado -->
                         <div v-else-if="props.row.estado === 'Rechazado'" class="text-center">
                             <q-icon name="cancel" color="negative" size="sm">
                                 <q-tooltip>{{ props.row.observacion_rechazo || 'Solicitud rechazada' }}</q-tooltip>
@@ -270,7 +248,6 @@
             </q-table>
         </div>
 
-        <!-- ═══ Dialog de notificación de devolución (por sub-item) ═══ -->
         <q-dialog v-model="returnDialog" persistent>
             <q-card style="min-width: 400px; max-width: 520px; width: 100%">
                 <q-toolbar :class="selectedLoanItem?.item?.tipo_categoria === 'Consumible' ? 'bg-orange-8' : 'bg-primary'" class="text-white">
@@ -282,7 +259,6 @@
                 </q-toolbar>
 
                 <q-card-section v-if="selectedLoanItem" class="q-pt-md">
-                    <!-- Info del ítem -->
                     <div class="item-info-box q-mb-md">
                         <div class="text-subtitle2 text-grey-7 q-mb-xs">
                             {{ selectedLoanItem.item?.tipo_categoria === 'Consumible' ? 'Ítem a entregar/reportar' : 'Ítem a devolver' }}
@@ -294,20 +270,17 @@
                         </span>
                     </div>
 
-                    <!-- Banner re-notificación (no recibida por admin) -->
                     <q-banner v-if="(selectedLoanItem.devolucion_pendiente_usuario || 0) > 0" rounded class="bg-red-1 text-red-9 q-mb-md" dense>
                         <template v-slot:avatar><q-icon name="warning" color="red"/></template>
                         El administrador <strong>no registró recepción</strong> de tu notificación anterior.
                         Vuelve a notificar <strong>{{ selectedLoanItem.devolucion_pendiente_usuario }}</strong> unidad(es).
                     </q-banner>
 
-                    <!-- Banner consumible -->
                     <q-banner v-else-if="selectedLoanItem.item?.tipo_categoria === 'Consumible'" rounded class="bg-orange-1 text-orange-9 q-mb-md" dense>
                         <template v-slot:avatar><q-icon name="info" color="orange" /></template>
                         Ítem consumible. Indica cuántas unidades <strong>entregas físicamente</strong>. Si los usaste todos y no queda nada, indica <strong>0</strong>.
                     </q-banner>
 
-                    <!-- No consumible: progreso + historial -->
                     <template v-else>
                         <q-banner rounded class="bg-blue-1 text-blue-9 q-mb-sm" dense>
                             <template v-slot:avatar><q-icon name="info" color="blue" /></template>
@@ -328,7 +301,6 @@
                                 Quedan <strong>{{ getLiPendiente(selectedLoanItem) }}</strong> unidad(es) por notificar
                             </div>
                         </div>
-                        <!-- Historial parciales -->
                         <div v-if="selectedLoanItem.devoluciones_parciales?.length > 0" class="q-mb-md">
                             <div class="text-caption text-grey-7 q-mb-xs">Notificaciones anteriores</div>
                             <div v-for="(d, i) in selectedLoanItem.devoluciones_parciales" :key="i" class="row items-start q-py-xs" style="border-bottom: 1px solid #f0f0f0;">
@@ -352,7 +324,6 @@
                         </div>
                     </template>
 
-                    <!-- Campo cantidad -->
                     <div class="q-mb-sm">
                         <div class="text-subtitle2 text-grey-7 q-mb-xs">
                             {{ selectedLoanItem.item?.tipo_categoria === 'Consumible'
@@ -374,14 +345,12 @@
                         />
                     </div>
 
-                    <!-- Observación -->
                     <div class="q-mb-sm">
                         <div class="text-subtitle2 text-grey-7 q-mb-xs">Observación <span class="text-grey-5 text-caption">(opcional)</span></div>
                         <q-input v-model="returnForm.observacion" type="textarea" outlined dense rows="2" maxlength="300" counter
                             :placeholder="selectedLoanItem.item?.tipo_categoria === 'Consumible' ? 'Ej: Solo quedan 2 unidades sin usar.' : 'Ej: Devuelvo 2 de 5, los otros los tengo aún.'"/>
                     </div>
 
-                    <!-- Banners de confirmación -->
                     <q-banner v-if="selectedLoanItem.item?.tipo_categoria === 'Consumible' && Number(returnForm.cantidadDevuelta) === 0" rounded class="bg-orange-1 text-orange-9 q-mt-md" dense>
                         <template v-slot:avatar><q-icon name="recycling" color="orange-8" /></template>
                         Todos los consumibles fueron <strong>utilizados</strong>. El préstamo se cerrará automáticamente.
@@ -433,10 +402,9 @@ const error = ref(null);
 const searchFilter = ref('');
 const estadoFiltro = ref(null);
 
-// ✅ CAMBIO: selectedLoanItem guarda el sub-item específico (li), no el préstamo
 const returnDialog = ref(false);
-const selectedLoan = ref(null);       // préstamo completo
-const selectedLoanItem = ref(null);   // sub-item de items[]
+const selectedLoan = ref(null); 
+const selectedLoanItem = ref(null);
 const returning = ref(false);
 const returnForm = ref({ cantidadDevuelta: null, observacion: '' });
 
@@ -467,9 +435,7 @@ const filteredLoans = computed(() => {
 
 const overdueCount = computed(() => loans.value.filter(l => isOverdue(l)).length);
 
-// ── Helpers de sub-item ────────────────────────────────────────────────────────
 
-// ✅ CORRECCIÓN: opera sobre el sub-item (li), no sobre el préstamo
 const getLiPendiente = (li) => {
     if (!li) return 0;
     const total = li.cantidad_aprobada ?? li.cantidad_prestamo;
@@ -477,24 +443,21 @@ const getLiPendiente = (li) => {
     return Math.max(0, total - confirmada);
 };
 
-// ✅ CORRECCIÓN: opera sobre el sub-item (li)
 const tieneNotificacionPendiente = (li) => {
     if (!li || li.item?.tipo_categoria === 'Consumible') return false;
     return (li.cantidad_devuelta || 0) > (li.cantidad_confirmada || 0);
 };
 
-// ── Dialog ────────────────────────────────────────────────────────────────────
 
-// ✅ CORRECCIÓN: recibe (loan, li) — el préstamo Y el sub-item específico
 const openReturnDialog = (loan, li) => {
     selectedLoan.value = loan;
     selectedLoanItem.value = li;
     const esConsumible = li.item?.tipo_categoria === 'Consumible';
     const total = li.cantidad_aprobada ?? li.cantidad_prestamo;
-    returnForm.value = {
-        cantidadDevuelta: esConsumible ? total : getLiPendiente(li),
-        observacion: ''
-    };
+returnForm.value = {
+    cantidadDevuelta: esConsumible ? 0 : 1,
+    observacion: ''
+};
     returnDialog.value = true;
 };
 
@@ -533,7 +496,6 @@ const submitReturn = async () => {
 
     returning.value = true;
     try {
-        // ✅ CORRECCIÓN CLAVE: se envía loanItemId correctamente
         const result = await loansService.notifyReturn(selectedLoan.value._id, {
             loanItemId: selectedLoanItem.value._id,
             cantidadDevuelta: Number(returnForm.value.cantidadDevuelta),
@@ -562,7 +524,7 @@ const loadLoans = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const data = await loansService.getAll();
+        const data = await loansService.getAll({ propios: true });
         loans.value = data;
     } catch (err) {
         error.value = 'Error al cargar los préstamos. Por favor, intenta nuevamente.';
@@ -578,6 +540,9 @@ const formatDate = (dateString) => {
 };
 
 const getLoanDisplayEstado = (loan) => {
+    if (loan.estado === 'Cerrado') {
+        return { label: 'Cerrado', css: 'cerrado' };
+    }
     if (loan.estado !== 'Devuelto') {
         return { label: loan.estado, css: loan.estado.toLowerCase() };
     }
@@ -592,7 +557,7 @@ const getLoanDisplayEstado = (loan) => {
 };
 
 const isOverdue = (loan) => {
-    if (!loan.fecha_estimada || loan.estado === 'Devuelto' || loan.estado === 'Rechazado') return false;
+    if (!loan.fecha_estimada || loan.estado === 'Devuelto' || loan.estado === 'Rechazado' || loan.estado === 'Cerrado') return false;
     return new Date(loan.fecha_estimada) < new Date();
 };
 
@@ -606,7 +571,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* (mantener todos los estilos del original — stat-chip, filter-bar, tipo-badge, status-badge, etc.) */
 
 :root { --c-border: #e2e8f0; --radius-md: 10px; --radius-lg: 12px; }
 .page-bg { background: #f0f4f8; min-height: 100vh; }
@@ -654,6 +618,7 @@ onMounted(() => {
 .status-badge--vencido   { background:#fee2e2; color:#b91c1c; }
 .status-badge--consumido { background:#fff3e0; color:#e65100; }
 .status-badge--mixto     { background:#ede7f6; color:#6a1b9a; }
+.status-badge--cerrado   { background:#f1f5f9; color:#334155; }
 .item-info-box { background: #f8fafc; border-radius: 8px; padding: 12px 14px; border: 1px solid #e2e8f0; }
 @media (max-width: 599px) { .page-bg { padding: 10px 8px !important; } .stat-chip { padding: 10px 10px; gap: 6px; min-height: 52px; } .stat-number { font-size: 17px; } .filter-tab { padding: 9px 12px; font-size: 12px; } .search-input { min-width: 140px; max-width: 100%; } }
 @media (max-width: 400px) { .stat-label { display: none; } }

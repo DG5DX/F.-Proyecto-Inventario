@@ -17,23 +17,19 @@
             <q-breadcrumbs-el :label="item?.nombre || 'equipo'" icon="inventory_2" />
         </q-breadcrumbs>
 
-        <!-- Loading -->
         <div v-if="loading" class="text-center q-py-xl">
             <q-spinner-dots size="64px" color="primary" />
             <div class="text-h6 text-grey-6 q-mt-md">Cargando equipo...</div>
         </div>
 
-        <!-- Error -->
         <div v-else-if="error" class="text-center q-py-xl">
             <q-icon name="error_outline" size="64px" color="negative" class="q-mb-md" />
             <div class="text-h6 text-negative">{{ error }}</div>
             <q-btn color="primary" label="Volver" @click="$router.back()" class="q-mt-md" />
         </div>
 
-        <!-- Contenido -->
         <div v-else-if="item" class="row q-col-gutter-lg">
 
-            <!-- ── Columna izquierda: info del ítem ────────────────────────── -->
             <div class="col-12 col-md-7">
                 <div class="text-h4 text-weight-bold text-dark q-mb-lg">
                     {{ item.nombre }}
@@ -65,6 +61,28 @@
                                 <q-item-section>
                                     <q-item-label caption class="text-grey-6">Tipo</q-item-label>
                                     <q-item-label class="text-weight-medium">{{ item.tipo_categoria }}</q-item-label>
+                                </q-item-section>
+                            </q-item>
+
+                            <q-item v-if="item.codigo_unspsc">
+                                <q-item-section side>
+                                    <q-icon name="tag" color="teal" size="sm" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label caption class="text-grey-6">Código UNSPSC</q-item-label>
+                                    <q-item-label class="text-weight-medium text-mono">{{ item.codigo_unspsc }}</q-item-label>
+                                </q-item-section>
+                            </q-item>
+
+                            <q-item v-if="item.unidad_medida || item.presentacion">
+                                <q-item-section side>
+                                    <q-icon name="straighten" color="teal" size="sm" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label caption class="text-grey-6">Unidad / Presentación</q-item-label>
+                                    <q-item-label class="text-weight-medium">
+                                        {{ [item.unidad_medida, item.presentacion].filter(Boolean).join(' — ') }}
+                                    </q-item-label>
                                 </q-item-section>
                             </q-item>
 
@@ -146,14 +164,12 @@
                 </q-card>
             </div>
 
-            <!-- ── Columna derecha: añadir al panel ───────────────────────── -->
             <div class="col-12 col-md-5">
                 <q-card class="shadow-2 q-pa-md sticky-card">
                     <div class="text-h5 text-weight-bold q-mb-sm text-dark">
                         Estado y Solicitud
                     </div>
 
-                    <!-- Chip de disponibilidad -->
                     <q-card-section
                         :class="`q-pa-md rounded-borders text-white q-mb-lg availability-status ${
                             item.estado === 'Disponible' ? 'bg-positive' : 'bg-negative'
@@ -177,7 +193,26 @@
                         </div>
                     </q-card-section>
 
-                    <!-- Banner: ya está en el carrito -->
+                    <q-banner
+                        v-if="wrongAula"
+                        class="bg-orange-1 text-orange-9 q-mb-md rounded-borders"
+                        dense
+                    >
+                        <template v-slot:avatar>
+                            <q-icon name="block" color="orange-8" />
+                        </template>
+                        <div class="text-weight-medium">Este ítem es de otro ambiente</div>
+                        <div class="text-caption">
+                            Tu panel ya tiene ítems del ambiente
+                            <strong>{{ cart.cartAulaNombre.value }}</strong>.
+                            Vacía el panel o completa ese préstamo antes de añadir ítems de otro ambiente.
+                        </div>
+                        <template v-slot:action>
+                            <q-btn flat dense no-caps label="Ver panel" color="orange-8"
+                                icon-right="inventory" to="/user/cart" />
+                        </template>
+                    </q-banner>
+
                     <q-banner
                         v-if="alreadyInCart"
                         class="bg-teal-1 text-teal-9 q-mb-md rounded-borders"
@@ -199,15 +234,12 @@
                         </template>
                     </q-banner>
 
-                    <!-- Título sección -->
                     <div class="text-h6 text-secondary q-mb-md">
                         {{ alreadyInCart ? 'Edita la cantidad desde el panel' : 'Añadir al panel de préstamo' }}
                     </div>
 
-                    <!-- ── Formulario: solo cuando NO está en el carrito ── -->
                     <div v-if="!alreadyInCart">
 
-                        <!-- Selector de cantidad -->
                         <div class="row items-center q-mb-xs">
                             <div class="row items-center no-wrap q-gutter-xs">
                                 <q-btn
@@ -216,7 +248,6 @@
                                     @click="formCantidad = Math.max(1, formCantidad - 1)"
                                 />
 
-                                <!-- Sin min / max / rules ni autocorrección -->
                                 <q-input
                                     v-model.number="formCantidad"
                                     type="number"
@@ -245,14 +276,12 @@
                             </div>
                         </div>
 
-                        <!-- Mensaje de error — visible pero sin corregir el valor -->
                         <div v-if="cantidadError" class="text-negative text-caption q-mb-md q-ml-xs row items-center no-wrap">
                             <q-icon name="warning" size="xs" class="q-mr-xs" />
                             {{ cantidadError }}
                         </div>
                         <div v-else class="q-mb-md" />
 
-                        <!-- Observación -->
                         <q-input
                             v-model="formObservacion"
                             filled
@@ -271,7 +300,6 @@
                             </template>
                         </q-input>
 
-                        <!-- Aviso capacitación -->
                         <q-banner v-if="requiresTraining" class="bg-warning-1 text-warning q-mb-md" rounded dense>
                             <template v-slot:avatar>
                                 <q-icon name="warning" color="warning" />
@@ -279,24 +307,21 @@
                             <strong>Atención:</strong> Este equipo requiere capacitación previa para su uso.
                         </q-banner>
 
-                        <!-- Motivo deshabilitado por stock -->
                         <div v-if="!canAddToCart" class="text-negative text-center text-weight-bold q-mb-md">
                             {{ disabledReason }}
                         </div>
 
-                        <!-- Botón añadir — bloqueado si hay error de cantidad -->
                         <q-btn
                             label="Añadir al panel de préstamo"
                             icon="add_box"
                             color="primary"
                             class="full-width q-mb-sm"
                             unelevated
-                            :disable="!canAddToCart || !!cantidadError"
+                            :disable="!canAddToCart || !!cantidadError || wrongAula"
                             @click="handleAddToCart"
                         />
                     </div>
 
-                    <!-- ── Cuando ya está en el carrito: recordatorio ── -->
                     <div v-else class="q-mb-md">
                         <q-banner class="bg-blue-1 text-blue-9 rounded-borders" dense>
                             <template v-slot:avatar>
@@ -306,7 +331,6 @@
                         </q-banner>
                     </div>
 
-                    <!-- Ir al panel -->
                     <q-btn
                         v-if="alreadyInCart || cartTotalItems > 0"
                         label="Ir al panel de préstamo"
@@ -324,7 +348,6 @@
                         />
                     </q-btn>
 
-                    <!-- Enlace a mis préstamos -->
                     <q-btn
                         flat
                         dense
@@ -353,7 +376,6 @@ const router = useRouter();
 const $q     = useQuasar();
 const cart   = useLoanCart();
 
-// ── State ─────────────────────────────────────────────────────────────────────
 const item    = ref(null);
 const loading = ref(false);
 const error   = ref(null);
@@ -361,7 +383,6 @@ const error   = ref(null);
 const formCantidad    = ref(1);
 const formObservacion = ref('');
 
-// ── Computed ──────────────────────────────────────────────────────────────────
 const alreadyInCart  = computed(() => item.value ? cart.hasItem(item.value._id) : false);
 const cartEntry      = computed(() => item.value ? cart.getEntry(item.value._id) : null);
 const cartTotalItems = computed(() => cart.totalItems.value);
@@ -372,6 +393,13 @@ const canAddToCart = computed(() =>
     item.value.cantidad_disponible > 0
 );
 
+const wrongAula = computed(() => {
+    if (!item.value) return false;
+    if (cart.isEmpty.value) return false;
+    const itemAulaId = item.value.aula?._id || item.value.aula;
+    return itemAulaId !== cart.cartAulaId.value;
+});
+
 const disabledReason = computed(() => {
     if (!item.value) return '';
     if (item.value.estado === 'Agotado') return 'No hay unidades disponibles';
@@ -379,7 +407,6 @@ const disabledReason = computed(() => {
     return 'No puede solicitar este equipo';
 });
 
-// Valida sin modificar formCantidad — devuelve mensaje de error o cadena vacía
 const cantidadError = computed(() => {
     if (!item.value) return '';
     const val = formCantidad.value;
@@ -401,7 +428,6 @@ const requiresTraining = computed(() => {
     return ['De Uso Controlado', 'Herramienta de equipo'].includes(item.value.tipo_zona);
 });
 
-// ── Métodos ───────────────────────────────────────────────────────────────────
 const getStockColor = () => {
     const p = stockPercentage.value;
     if (p === 0) return 'negative';
@@ -411,7 +437,7 @@ const getStockColor = () => {
 };
 
 const handleAddToCart = () => {
-    if (!canAddToCart.value || cantidadError.value) return;
+    if (!canAddToCart.value || cantidadError.value || wrongAula.value) return;
 
     const action = cart.addItem(item.value, formCantidad.value, formObservacion.value);
 
